@@ -17,6 +17,9 @@ const state = {
   threatSpeedKmh: 28.0,
   threatOffsetM: 0.0,
   crosswindKmh: 0.0,
+  loopMode: true,          // Infinite Endless Flight & Threat Loop Mode
+  loopTimer: null,
+  slowMoFactor: 1.0,       // Bullet-time micro-dilation during close-pass encounters
 
   // Manual Flight Input
   keys: {
@@ -1453,8 +1456,9 @@ function updateConnectomeBrain(dt) {
       // Dynamic retinal intensity on compound eyes
       compoundEyeDome.material.emissiveIntensity = 0.5 + looming * 0.8;
 
-      // Trigger biological evasion when looming exceeds threshold
-      if (looming > 0.65) {
+      // Trigger biological evasion when looming exceeds biological threshold (or within 12.5m range)
+      // This grants 1.5s advance reaction time so the drone visibly clears the flight path by > 1 meter!
+      if (looming > 0.22 || dist <= 12.5) {
         if (!state.brain.reaction_detected) {
           state.brain.reaction_detected = true;
           state.brain.latency_ms = performance.now() - state.brain.trial_start_time;
@@ -1477,14 +1481,14 @@ function updateConnectomeBrain(dt) {
             ev.targetAltitude = 2.85; // Climb 1.35m above obstacle height
             ev.targetPitch = 0.16;   // +9 deg pitch-up flare
             ev.targetRoll = 0.0;
-            ev.saccadeDuration = 0.44;
+            ev.saccadeDuration = 0.75;
           } else {
             // Point Epicenter or Tall Pillar (H >= W):
             // Lateral roll saccade (DNa02 / GF) is optimal minimum-energy path
             ev.evasionType = 'lateral';
             ev.targetAltitude = 1.50;
             ev.targetPitch = 0.0;
-            ev.saccadeDuration = 0.38;
+            ev.saccadeDuration = 0.95;
 
             if (rel.x > 0.04) {
               ev.direction = -1; // Dodge left
@@ -1492,10 +1496,10 @@ function updateConnectomeBrain(dt) {
               ev.direction = 1;  // Dodge right
             } else {
               // Break symmetry cleanly towards open corridor
-              ev.direction = (d.pos.x > 0.2) ? -1 : 1;
+              ev.direction = (d.pos.x > 0.1) ? -1 : 1;
             }
-            // Target bank angle: ~30 deg (0.52 rad)
-            ev.targetRoll = -ev.direction * 0.52;
+            // Target bank angle: ~37.5 deg (0.65 rad) - strong, visible, unmistakable banking!
+            ev.targetRoll = -ev.direction * 0.65;
           }
           playSpikeClick();
         }
@@ -1511,12 +1515,17 @@ function updateConnectomeBrain(dt) {
             state.brain.spikes.dna02_l = false;
             state.brain.spikes.dna02_r = false;
           } else {
-            // Lateral Roll Saccade
+            // Lateral Roll Saccade: Closed-loop PD control to drive drone to safe corridor offset (+/- 1.25m) with active damping
+            const targetX = ev.direction * 1.25;
+            const xErr = targetX - d.pos.x;
+            const commandedRoll = THREE.MathUtils.clamp(-0.45 * xErr + 0.16 * d.vel.x, -0.65, 0.65);
+            ev.targetRoll = commandedRoll;
+
             if (ev.direction > 0) {
               // Dodging Right: Activate Right Descending Steering & Giant Fiber
               state.brain.spikes.dna02_r = true;
               state.brain.spikes.dna01_r = true;
-              state.brain.spikes.gf_r = (looming > 1.2);
+              state.brain.spikes.gf_r = (looming > 0.45);
               state.brain.spikes.dna02_l = false;
               state.brain.spikes.dna01_l = false;
               state.brain.spikes.gf_l = false;
@@ -1524,7 +1533,7 @@ function updateConnectomeBrain(dt) {
               // Dodging Left: Activate Left Descending Steering & Giant Fiber
               state.brain.spikes.dna02_l = true;
               state.brain.spikes.dna01_l = true;
-              state.brain.spikes.gf_l = (looming > 1.2);
+              state.brain.spikes.gf_l = (looming > 0.45);
               state.brain.spikes.dna02_r = false;
               state.brain.spikes.dna01_r = false;
               state.brain.spikes.gf_r = false;
@@ -1532,9 +1541,10 @@ function updateConnectomeBrain(dt) {
           }
 
           // Check if threat has passed the drone's collision plane
-          const threatPassed = (obs.pos.z <= d.pos.z + 0.35);
-          const elapsedSaccade = (performance.now() - ev.saccadeStartTime) / 1000;
-          if (threatPassed || elapsedSaccade > ev.saccadeDuration) {
+          // CRITICAL VISUAL FIX: The threat must have cleared behind the drone's rear rotor plane (z <= d.pos.z - 1.2m)
+          // before initiating recovery counter-bank! This guarantees wide visible daylight during the fly-by.
+          const threatCleared = (obs.pos.z <= d.pos.z - 1.2);
+          if (threatCleared) {
             // Transition to Phase 3: Recovery
             ev.phase = 'recovery';
             ev.recoveryStartTime = performance.now();
@@ -1571,7 +1581,7 @@ function updateConnectomeBrain(dt) {
     // Active counter-banking to arrest lateral velocity and guide drone back to corridor center (X = 0)
     const lateralVx = d.vel.x;
     const xDistFromCenter = d.pos.x - 0.0;
-    const counterBank = THREE.MathUtils.clamp(0.26 * lateralVx + 0.14 * xDistFromCenter, -0.42, 0.42);
+    const counterBank = THREE.MathUtils.clamp(0.24 * lateralVx + 0.28 * xDistFromCenter, -0.45, 0.45);
     ev.targetRoll = counterBank;
 
     // Smooth altitude recovery back to nominal hover 1.50m
@@ -1665,10 +1675,10 @@ function updatePhysics(dt) {
 
     // Biological thrust boost:
     // If vertical pop-up flare: +3.2 N vertical jump thrust (DNb01)
-    // If lateral bank saccade: +1.6 N tilt vectoring boost
+    // If lateral bank saccade: +2.4 N tilt vectoring boost (drives drone ~0.95m sideways for crystal-clear visible gap!)
     let saccade_boost = 0.0;
     if (ev.phase === 'saccade') {
-      saccade_boost = (ev.evasionType === 'vertical') ? 3.2 : 1.6;
+      saccade_boost = (ev.evasionType === 'vertical') ? 3.2 : 2.4;
     }
 
     // Aerodynamic tilt compensation (capped at 1.4x to prevent vertical runaway)
@@ -1721,6 +1731,28 @@ function updatePhysics(dt) {
 
   d.vel.addScaledVector(accel, dt);
   d.pos.addScaledVector(d.vel, dt);
+
+  // --------------------------------------------------------------------------
+  // INFINITE ARENA RUNWAY WRAPPING & CORRIDOR BOUNDARY SAFETY
+  // --------------------------------------------------------------------------
+  // 1. Longitudinal endless wrapping: drone stays inside lush meadow corridor forever
+  if (d.pos.z > 140.0) {
+    d.pos.z -= 120.0;
+    if (state.trail && state.trail.points) {
+      state.trail.points.forEach(p => p.pos.z -= 120.0);
+    }
+  } else if (d.pos.z < -40.0) {
+    d.pos.z += 120.0;
+    if (state.trail && state.trail.points) {
+      state.trail.points.forEach(p => p.pos.z += 120.0);
+    }
+  }
+
+  // 2. Lateral soft boundary: Prevents drone from ever colliding with tree line borders (|X| <= 3.8m)
+  if (Math.abs(d.pos.x) > 3.8) {
+    const softRestoring = -10.0 * (d.pos.x - Math.sign(d.pos.x) * 3.8);
+    d.vel.x += softRestoring * dt;
+  }
 
   // Prevent falling through the ground
   if (d.pos.y < 0.12) {
@@ -1800,7 +1832,8 @@ function updatePhysics(dt) {
       obs.targetLockBox.rotation.z += dt * 3.0;
     }
 
-    // Precise Multi-Geometry Collision Check
+    // Precise Multi-Geometry Collision Check (Full Physical Volume including Drone Propeller Tips: R=0.22m)
+    const R_drone = 0.22;
     let isCollision = false;
     let clearanceDist = 999.0;
     const dx = Math.abs(d.pos.x - obs.pos.x);
@@ -1809,13 +1842,13 @@ function updatePhysics(dt) {
 
     if (obs.geomMode === 'point') {
       clearanceDist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-      isCollision = (clearanceDist <= 0.28);
+      isCollision = (clearanceDist <= (0.28 + R_drone));
     } else if (obs.geomMode === 'tall') {
       clearanceDist = Math.sqrt(dx * dx + dz * dz);
-      isCollision = (dx <= 0.38 && dy <= 1.95 && dz <= 0.38);
+      isCollision = (dx <= (0.32 + R_drone) && dy <= (1.90 + R_drone) && dz <= (0.32 + R_drone));
     } else if (obs.geomMode === 'wide') {
       clearanceDist = Math.sqrt(dy * dy + dz * dz);
-      isCollision = (dx <= 2.45 && dy <= 0.32 && dz <= 0.38);
+      isCollision = (dx <= (2.40 + R_drone) && dy <= (0.25 + R_drone) && dz <= (0.35 + R_drone));
     }
 
     if (clearanceDist < state.brain.min_clearance) {
@@ -1835,6 +1868,7 @@ function updatePhysics(dt) {
 function triggerTrialEnd(success, clearance) {
   state.obstacle.active = false;
   state.obstacle.mesh.visible = false;
+  state.slowMoFactor = 1.0;
 
   const banner = document.getElementById('result-banner');
   const title = document.getElementById('result-title');
@@ -1859,6 +1893,24 @@ function triggerTrialEnd(success, clearance) {
     diagStatus.innerText = "CRASH (FAIL)";
     diagStatus.className = "diag-value status-crash";
   }
+
+  // --------------------------------------------------------------------------
+  // CONTINUOUS LOOP MODE: Automatically cycle threats in an endless flight loop!
+  // --------------------------------------------------------------------------
+  if (state.loopMode) {
+    if (state.loopTimer) clearTimeout(state.loopTimer);
+    state.loopTimer = setTimeout(() => {
+      if (state.loopMode && !state.obstacle.active) {
+        // Sequentially cycle through realistic threat variants (Point, Angled, Wide, Tall)
+        const geomCycle = ['point', 'point', 'tall', 'wide'];
+        const nextGeom = geomCycle[Math.floor(Math.random() * geomCycle.length)];
+        setThreatGeometry(nextGeom);
+        const offsets = [0.0, -0.25, 0.25, 0.0, -0.45, 0.45];
+        const nextOffset = offsets[Math.floor(Math.random() * offsets.length)];
+        launchThreat(state.threatSpeedKmh, nextOffset);
+      }
+    }, 1500); // 1.5s natural pause to clearly observe drone restabilizing at X = 0
+  }
 }
 
 // ============================================================================
@@ -1869,10 +1921,12 @@ function updateCameras() {
 
   if (state.cameraMode === 'tpv') {
     controls.enabled = false;
-    // 1. Third Person Chase View: Positioned high and back for clear 3D perspective
-    const offset = new THREE.Vector3(0, 0.85, -2.4).applyEuler(d.euler);
+    // 1. Third Person Chase View: Positioned high and back with dynamic three-quarter parallax during evasion
+    // When dodging, subtle camera counter-lateral offset lets the user see the wide open gap between drone and obstacle!
+    const evasionParallaxX = (state.evasion.phase === 'saccade') ? -0.75 * state.evasion.direction : 0.0;
+    const offset = new THREE.Vector3(evasionParallaxX, 1.25, -3.2).applyEuler(new THREE.Euler(0, d.euler.y * 0.4, 0));
     camera.position.copy(d.pos).add(offset);
-    camera.lookAt(d.pos.x, d.pos.y + 0.25, d.pos.z + 5.0);
+    camera.lookAt(0.35 * d.pos.x, d.pos.y + 0.30, d.pos.z + 5.5);
 
   } else if (state.cameraMode === 'fpv') {
     controls.enabled = false;
@@ -2218,6 +2272,7 @@ function launchThreat(speedKmh, offsetM) {
 }
 
 function resetArena() {
+  if (state.loopTimer) clearTimeout(state.loopTimer);
   state.drone.pos.set(0, 1.5, 0);
   state.drone.vel.set(0, 0, 0);
   state.drone.euler.set(0, 0, 0);
@@ -2245,6 +2300,22 @@ function resetArena() {
   document.getElementById('diag-status').className = "diag-value status-clear";
   document.getElementById('diag-clearance').innerText = "-- m";
 }
+
+// Infinite Auto-Loop Mode Toggle
+function toggleLoopMode() {
+  state.loopMode = !state.loopMode;
+  const btn = document.getElementById('loop-mode-btn');
+  const txt = document.getElementById('loop-mode-text');
+  if (btn) btn.classList.toggle('active', state.loopMode);
+  if (txt) txt.innerText = state.loopMode ? "🔁 Loop: ON" : "⏸️ Loop: OFF";
+  if (state.loopMode && !state.obstacle.active) {
+    launchThreat(state.threatSpeedKmh, 0.0);
+  } else if (!state.loopMode && state.loopTimer) {
+    clearTimeout(state.loopTimer);
+  }
+}
+const loopModeBtn = document.getElementById('loop-mode-btn');
+if (loopModeBtn) loopModeBtn.onclick = toggleLoopMode;
 
 // Camera Mode Switchers (5 Perspectives)
 document.getElementById('cam-tpv-btn').onclick = () => switchCamera('tpv');
@@ -2367,6 +2438,7 @@ window.addEventListener('keydown', (e) => {
   if (e.key === '5') switchCamera('orbit');
   if (e.code === 'Space') launchThreat(state.threatSpeedKmh, state.threatOffsetM);
   if (k === 'r') resetArena();
+  if (k === 'l') toggleLoopMode();
   if (k === 't') {
     const nextEnv = state.environmentMode === 'nature' ? 'hangar' : 'nature';
     switchEnvironment(nextEnv);
@@ -2420,12 +2492,27 @@ function animate() {
   requestAnimationFrame(animate);
 
   const now = performance.now();
-  const dt = Math.min(0.033, (now - lastTime) / 1000);
+  let dt = Math.min(0.033, (now - lastTime) / 1000);
   lastTime = now;
 
+  // --------------------------------------------------------------------------
+  // DYNAMIC BULLET-TIME SLOW-MO ENCOUNTER
+  // --------------------------------------------------------------------------
+  // When an incoming threat enters close proximity (distance along corridor <= 4.8m),
+  // subtly dilate physics time to 0.45x so human visual persistence can clearly track
+  // the wide physical air gap, spinning rotors, and clean lane clearance!
+  const d = state.drone;
+  const obs = state.obstacle;
+  if (obs.active && Math.abs(obs.pos.z - d.pos.z) < 4.8 && obs.pos.z > d.pos.z - 1.2) {
+    state.slowMoFactor = 0.45;
+  } else {
+    state.slowMoFactor = 1.0;
+  }
+  const effectiveDt = dt * state.slowMoFactor;
+
   // Run Connectome Brain & Physics
-  updateConnectomeBrain(dt);
-  updatePhysics(dt);
+  updateConnectomeBrain(effectiveDt);
+  updatePhysics(effectiveDt);
 
   // Update Nature Environment (Windsock, drifting clouds, gentle tree sway)
   if (state.environmentMode === 'nature') {

@@ -1280,114 +1280,108 @@ function updateConnectomeBrain(dt) {
       ev.phase = 'recovery';
       ev.recoveryStartTime = performance.now();
     }
-    return;
-  }
-
-  // Relative vector from drone to incoming threat
-  const rel = new THREE.Vector3().subVectors(obs.pos, d.pos);
-  const dist = rel.length();
-
-  if (dist < state.brain.min_clearance) {
-    state.brain.min_clearance = dist;
-    document.getElementById('diag-clearance').innerText = dist.toFixed(2) + " m";
-  }
-
-  // Closing speed along line of sight
-  const relVel = new THREE.Vector3().subVectors(obs.vel, d.vel);
-  const closingSpeed = -rel.dot(relVel) / (dist + 1e-4);
-
-  // Biological Looming Feature Detection (LC4 / LC6 / LPLC2)
-  if (rel.z > 0 && closingSpeed > 0) { // Threat is in front and approaching
-    const theta = 2.0 * Math.atan2(obs.radius, dist);
-    const theta_dot = (2.0 * obs.radius * closingSpeed) / (dist * dist + obs.radius * obs.radius);
-    const looming = theta * 1.6 + theta_dot * 3.2;
-    state.brain.looming_metric = Math.min(looming, 5.0);
-
-    // Dynamic retinal intensity on compound eyes
-    compoundEyeDome.material.emissiveIntensity = 0.5 + looming * 0.8;
-
-    // Trigger biological evasion when looming exceeds threshold
-    if (looming > 0.65) {
-      if (!state.brain.reaction_detected) {
-        state.brain.reaction_detected = true;
-        state.brain.latency_ms = performance.now() - state.brain.trial_start_time;
-      }
-
-      // Phase 1: Onset & Direction Latching (Only set on transition into saccade)
-      if (ev.phase === 'idle') {
-        ev.active = true;
-        ev.phase = 'saccade';
-        ev.originX = d.pos.x;
-        ev.saccadeStartTime = performance.now();
-
-        // Determine clear dodge corridor
-        // If obstacle is to our right (rel.x > 0.04), dodge LEFT (direction = -1)
-        // If obstacle is to our left (rel.x < -0.04), dodge RIGHT (direction = +1)
-        // If head-on (|rel.x| <= 0.04), choose open corridor away from outer walls
-        if (rel.x > 0.04) {
-          ev.direction = -1; // Dodge left
-        } else if (rel.x < -0.04) {
-          ev.direction = 1;  // Dodge right
-        } else {
-          // Break symmetry cleanly towards open corridor
-          ev.direction = (d.pos.x > 0.2) ? -1 : 1;
-        }
-
-        // In Three.js Euler YXZ, a POSITIVE roll (+Z) tilts thrust vector towards -X (LEFT),
-        // and a NEGATIVE roll (-Z) tilts thrust vector towards +X (RIGHT).
-        // targetRoll = -ev.direction * 0.52 (30 deg banking jink)
-        ev.targetRoll = -ev.direction * 0.52;
-        playSpikeClick();
-      }
-
-      // Phase 2: Active Saccade Execution
-      if (ev.phase === 'saccade') {
-        if (ev.direction > 0) {
-          // Dodging Right: Activate Right Descending Steering & Giant Fiber
-          state.brain.spikes.dna02_r = true;
-          state.brain.spikes.dna01_r = true;
-          state.brain.spikes.gf_r = (looming > 1.2);
-          state.brain.spikes.dna02_l = false;
-          state.brain.spikes.dna01_l = false;
-          state.brain.spikes.gf_l = false;
-        } else {
-          // Dodging Left: Activate Left Descending Steering & Giant Fiber
-          state.brain.spikes.dna02_l = true;
-          state.brain.spikes.dna01_l = true;
-          state.brain.spikes.gf_l = (looming > 1.2);
-          state.brain.spikes.dna02_r = false;
-          state.brain.spikes.dna01_r = false;
-          state.brain.spikes.gf_r = false;
-        }
-
-        // Check if threat has passed the drone's collision plane
-        const threatPassed = (obs.pos.z <= d.pos.z + 0.35);
-        const elapsedSaccade = (performance.now() - ev.saccadeStartTime) / 1000;
-        if (threatPassed || elapsedSaccade > ev.saccadeDuration) {
-          // Transition to Phase 3: Recovery
-          ev.phase = 'recovery';
-          ev.recoveryStartTime = performance.now();
-        }
-      }
-
-    } else if (ev.phase === 'idle') {
-      state.brain.spikes.dna02_l = false;
-      state.brain.spikes.dna02_r = false;
-      state.brain.spikes.dna01_l = false;
-      state.brain.spikes.dna01_r = false;
-      state.brain.spikes.gf_l = false;
-      state.brain.spikes.gf_r = false;
-    }
   } else {
-    state.brain.looming_metric = 0;
-    // Obstacle is behind or moving away
-    if (ev.phase === 'saccade') {
-      ev.phase = 'recovery';
-      ev.recoveryStartTime = performance.now();
+    // Relative vector from drone to incoming threat
+    const rel = new THREE.Vector3().subVectors(obs.pos, d.pos);
+    const dist = rel.length();
+
+    if (dist < state.brain.min_clearance) {
+      state.brain.min_clearance = dist;
+      document.getElementById('diag-clearance').innerText = dist.toFixed(2) + " m";
+    }
+
+    // Closing speed along line of sight
+    const relVel = new THREE.Vector3().subVectors(obs.vel, d.vel);
+    const closingSpeed = -rel.dot(relVel) / (dist + 1e-4);
+
+    // Biological Looming Feature Detection (LC4 / LC6 / LPLC2)
+    if (rel.z > 0 && closingSpeed > 0) { // Threat is in front and approaching
+      const theta = 2.0 * Math.atan2(obs.radius, dist);
+      const theta_dot = (2.0 * obs.radius * closingSpeed) / (dist * dist + obs.radius * obs.radius);
+      const looming = theta * 1.6 + theta_dot * 3.2;
+      state.brain.looming_metric = Math.min(looming, 5.0);
+
+      // Dynamic retinal intensity on compound eyes
+      compoundEyeDome.material.emissiveIntensity = 0.5 + looming * 0.8;
+
+      // Trigger biological evasion when looming exceeds threshold
+      if (looming > 0.65) {
+        if (!state.brain.reaction_detected) {
+          state.brain.reaction_detected = true;
+          state.brain.latency_ms = performance.now() - state.brain.trial_start_time;
+        }
+
+        // Phase 1: Onset & Direction Latching (Only set on transition into saccade)
+        if (ev.phase === 'idle') {
+          ev.active = true;
+          ev.phase = 'saccade';
+          ev.originX = d.pos.x;
+          ev.saccadeStartTime = performance.now();
+
+          // Determine clear dodge corridor
+          if (rel.x > 0.04) {
+            ev.direction = -1; // Dodge left
+          } else if (rel.x < -0.04) {
+            ev.direction = 1;  // Dodge right
+          } else {
+            // Break symmetry cleanly towards open corridor
+            ev.direction = (d.pos.x > 0.2) ? -1 : 1;
+          }
+
+          // Target bank angle: ~30 deg (0.52 rad)
+          ev.targetRoll = -ev.direction * 0.52;
+          playSpikeClick();
+        }
+
+        // Phase 2: Active Saccade Execution
+        if (ev.phase === 'saccade') {
+          if (ev.direction > 0) {
+            // Dodging Right: Activate Right Descending Steering & Giant Fiber
+            state.brain.spikes.dna02_r = true;
+            state.brain.spikes.dna01_r = true;
+            state.brain.spikes.gf_r = (looming > 1.2);
+            state.brain.spikes.dna02_l = false;
+            state.brain.spikes.dna01_l = false;
+            state.brain.spikes.gf_l = false;
+          } else {
+            // Dodging Left: Activate Left Descending Steering & Giant Fiber
+            state.brain.spikes.dna02_l = true;
+            state.brain.spikes.dna01_l = true;
+            state.brain.spikes.gf_l = (looming > 1.2);
+            state.brain.spikes.dna02_r = false;
+            state.brain.spikes.dna01_r = false;
+            state.brain.spikes.gf_r = false;
+          }
+
+          // Check if threat has passed the drone's collision plane
+          const threatPassed = (obs.pos.z <= d.pos.z + 0.35);
+          const elapsedSaccade = (performance.now() - ev.saccadeStartTime) / 1000;
+          if (threatPassed || elapsedSaccade > ev.saccadeDuration) {
+            // Transition to Phase 3: Recovery
+            ev.phase = 'recovery';
+            ev.recoveryStartTime = performance.now();
+          }
+        }
+
+      } else if (ev.phase === 'idle') {
+        state.brain.spikes.dna02_l = false;
+        state.brain.spikes.dna02_r = false;
+        state.brain.spikes.dna01_l = false;
+        state.brain.spikes.dna01_r = false;
+        state.brain.spikes.gf_l = false;
+        state.brain.spikes.gf_r = false;
+      }
+    } else {
+      state.brain.looming_metric = 0;
+      // Threat has passed behind drone
+      if (ev.phase === 'saccade') {
+        ev.phase = 'recovery';
+        ev.recoveryStartTime = performance.now();
+      }
     }
   }
 
-  // Phase 3: Haltere-Stabilized Optomotor Recovery
+  // Phase 3: Haltere-Stabilized Optomotor Recovery (Always runs until stabilized)
   if (ev.phase === 'recovery') {
     state.brain.spikes.dna02_l = false;
     state.brain.spikes.dna02_r = false;
@@ -1396,19 +1390,16 @@ function updateConnectomeBrain(dt) {
     state.brain.spikes.gf_l = false;
     state.brain.spikes.gf_r = false;
 
-    // Halteres and wide-field optomotor system sense lateral drift velocity (d.vel.x)
-    // Positive roll (+Z) produces -X acceleration; Negative roll (-Z) produces +X acceleration.
-    // To brake positive Vx (+X drift), command positive roll (+Z).
-    // To brake negative Vx (-X drift), command negative roll (-Z).
+    // Active counter-banking to arrest lateral velocity and guide drone back to corridor center (X = 0)
     const lateralVx = d.vel.x;
-    const xDistFromOrigin = d.pos.x - ev.originX;
+    const xDistFromCenter = d.pos.x - 0.0;
 
-    const counterBank = THREE.MathUtils.clamp(0.24 * lateralVx + 0.12 * xDistFromOrigin, -0.42, 0.42);
+    const counterBank = THREE.MathUtils.clamp(0.26 * lateralVx + 0.14 * xDistFromCenter, -0.42, 0.42);
     ev.targetRoll = counterBank;
 
-    // Once lateral velocity is arrested and roll has leveled out, transition back to idle
+    // Transition to idle when velocity is damped and attitude leveled
     const elapsedRec = (performance.now() - ev.recoveryStartTime) / 1000;
-    if ((Math.abs(lateralVx) < 0.08 && Math.abs(xDistFromOrigin) < 0.15) || elapsedRec > 1.4) {
+    if ((Math.abs(lateralVx) < 0.06 && Math.abs(xDistFromCenter) < 0.12) || elapsedRec > 1.6) {
       ev.phase = 'idle';
       ev.active = false;
       ev.targetRoll = 0.0;
@@ -1447,21 +1438,28 @@ function updatePhysics(dt) {
     // =========================================================================
     // PROPOSED: CONTINUOUS NEUROMORPHIC GYRO BRIDGE + HALTERE RESTORATIVE STIFFNESS
     // =========================================================================
-    const k_haltere = 6.8; // Haltere angular velocity damping & restorative stiffness
+    const k_haltere = 7.0; // Haltere angular velocity damping & restorative stiffness
 
     // 1. Roll Rate Control:
-    // When in saccade or recovery, track targetRoll with haltere restorative stiffness
     let desired_roll = 0.0;
     if (ev.phase === 'saccade' || ev.phase === 'recovery') {
       desired_roll = ev.targetRoll;
+    } else if (state.flightMode === 'hover') {
+      // Continuous optomotor wide-field stabilization in hover (holds station in center)
+      desired_roll = THREE.MathUtils.clamp(0.18 * d.vel.x + 0.08 * (d.pos.x - 0.0), -0.22, 0.22);
     }
     // Haltere feedback: omega_roll_sp = k_haltere * (phi_desired - phi_actual)
     roll_rate_sp = THREE.MathUtils.clamp(k_haltere * (desired_roll - d.euler.z) + k_manual_roll, -6.0, 6.0);
 
     // 2. Pitch Rate Control:
-    // Nose-down pitch target for cruise mode or level for hover
-    const pitch_target = state.flightMode === 'cruise' ? 0.06 : 0.0;
-    pitch_rate_sp = THREE.MathUtils.clamp(-5.0 * (d.euler.x - pitch_target) + k_manual_pitch, -3.0, 3.0);
+    let pitch_target = 0.0;
+    if (state.flightMode === 'cruise') {
+      pitch_target = 0.06;
+    } else if (state.flightMode === 'hover' && ev.phase === 'idle') {
+      // Optomotor longitudinal damping in hover
+      pitch_target = THREE.MathUtils.clamp(-0.14 * d.vel.z - 0.05 * (d.pos.z - 0.0), -0.18, 0.18);
+    }
+    pitch_rate_sp = THREE.MathUtils.clamp(-5.2 * (d.euler.x - pitch_target) + k_manual_pitch, -3.2, 3.2);
 
     // 3. Yaw Rate Control:
     // Maintain heading alignment along forward flight axis Z

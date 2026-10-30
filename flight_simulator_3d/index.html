@@ -27,19 +27,27 @@
       </div>
     </div>
 
-    <!-- View Mode Switcher -->
+    <!-- View Mode Switcher: 5 Perspectives -->
     <div class="camera-toolbar" role="toolbar" aria-label="Camera Views">
-      <button id="cam-tpv-btn" class="cam-btn active" title="Third Person Chase View (TPV)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-        <span>TPV (Chase)</span>
+      <button id="cam-tpv-btn" class="cam-btn active" title="Third Person Chase View (Key: 1)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        <span>1: Chase</span>
       </button>
-      <button id="cam-fpv-btn" class="cam-btn" title="First Person Cockpit View (FPV)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>
-        <span>FPV (Cockpit)</span>
+      <button id="cam-fpv-btn" class="cam-btn" title="First Person Cockpit View (Key: 2)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>
+        <span>2: FPV</span>
       </button>
-      <button id="cam-orbit-btn" class="cam-btn" title="Free Orbit View">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M3.6 9h16.8M3.6 15h16.8"></path></svg>
-        <span>Orbit Free</span>
+      <button id="cam-top-btn" class="cam-btn" title="Top-Down Tactical Map View (Key: 3)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 22 22 22"></polygon></svg>
+        <span>3: Top</span>
+      </button>
+      <button id="cam-side-btn" class="cam-btn" title="Side Profile Elevation View (Key: 4)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+        <span>4: Side</span>
+      </button>
+      <button id="cam-orbit-btn" class="cam-btn" title="Free Orbit View (Key: 5)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M3.6 9h16.8M3.6 15h16.8"></path></svg>
+        <span>5: Orbit</span>
       </button>
     </div>
 
@@ -151,6 +159,20 @@
         <div class="diag-value" id="diag-clearance">-- m</div>
       </div>
     </div>
+
+    <!-- Real-Time Dynamic S-Curve Trajectory & Balancing Graph -->
+    <div class="trajectory-graph-wrapper">
+      <div class="scope-header">
+        <span>LIVE S-CURVE TRAJECTORY & EQUILIBRIUM (X-Z)</span>
+        <span class="scope-fps" id="graph-phase-badge">CENTER 0.00m</span>
+      </div>
+      <canvas id="trajectory-curve-canvas" width="300" height="110"></canvas>
+      <div class="trajectory-legend">
+        <span><span class="dot cyan"></span> Drone Path</span>
+        <span><span class="dot red"></span> Threat Point</span>
+        <span><span class="dot green"></span> Center Track</span>
+      </div>
+    </div>
   </aside>
 
   <!-- Right Interactive Mission Control Deck -->
@@ -173,6 +195,25 @@
       </div>
       <p class="desc-hint" id="controller-desc">
         Continuous biological LIF spiking integrated into 3D angular rates with Haltere damping.
+      </p>
+    </div>
+
+    <!-- Threat Geometry & Aspect Ratio Analyzer -->
+    <div class="control-section">
+      <label class="section-title">THREAT GEOMETRY & SHAPE ANALYZER</label>
+      <div class="segmented-control" role="radiogroup">
+        <button id="threat-geom-point" class="seg-btn active" title="Mathematical Precision Spatial Point Epicenter">
+          🎯 Point Epicenter
+        </button>
+        <button id="threat-geom-tall" class="seg-btn" title="Tall Pillar (H > W) -> Lateral Roll Bank">
+          🏛️ Tall (H&gt;W)
+        </button>
+        <button id="threat-geom-wide" class="seg-btn" title="Wide Barrier (W > H) -> Vertical Pop-Up Flare">
+          🚧 Wide (W&gt;H)
+        </button>
+      </div>
+      <p class="desc-hint" id="geom-desc">
+        Point Epicenter: Laser-locked spatial coordinate (x₀, y₀, z₀) with exact mathematical collision boundary.
       </p>
     </div>
 
@@ -237,14 +278,16 @@
   <!-- Bottom Helper Bar -->
   <footer class="bottom-bar">
     <div class="keys-help">
-      <span><kbd>1</kbd> TPV</span>
+      <span><kbd>1</kbd> Chase</span>
       <span><kbd>2</kbd> FPV</span>
-      <span><kbd>3</kbd> Orbit</span>
-      <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Manual Flight</span>
-      <span><kbd>SPACE</kbd> Launch Threat</span>
-      <span><kbd>H</kbd> Toggle HUD</span>
-      <span><kbd>R</kbd> Reset Arena</span>
-      <span><kbd>M</kbd> Controller Switch</span>
+      <span><kbd>3</kbd> Top-Down</span>
+      <span><kbd>4</kbd> Side</span>
+      <span><kbd>5</kbd> Orbit</span>
+      <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Flight</span>
+      <span><kbd>SPACE</kbd> Threat Swatter</span>
+      <span><kbd>H</kbd> HUD</span>
+      <span><kbd>R</kbd> Reset</span>
+      <span><kbd>M</kbd> Controller</span>
       <span><kbd>E</kbd> Environment</span>
     </div>
     <div class="paper-badge">

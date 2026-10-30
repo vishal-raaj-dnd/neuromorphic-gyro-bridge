@@ -136,14 +136,14 @@ body, html {
 .cam-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
+  gap: 6px;
+  padding: 5px 11px;
   background: transparent;
   border: none;
   border-radius: 20px;
   color: var(--text-muted);
   font-family: var(--font-sans);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
   transition: var(--transition-fast);
@@ -393,6 +393,50 @@ body.panels-collapsed .right-dock {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
 }
+
+/* Real-Time S-Curve Trajectory Graph */
+.trajectory-graph-wrapper {
+  background: rgba(5, 8, 15, 0.9);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 8px;
+}
+
+#trajectory-curve-canvas {
+  width: 100%;
+  height: 100px;
+  display: block;
+  background: #030712;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 240, 255, 0.1);
+}
+
+.trajectory-legend {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  margin-top: 6px;
+}
+
+.trajectory-legend span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot.cyan { background: var(--accent-cyan); box-shadow: 0 0 6px var(--accent-cyan); }
+.dot.red { background: var(--accent-red); box-shadow: 0 0 6px var(--accent-red); }
+.dot.green { background: var(--accent-green); box-shadow: 0 0 6px var(--accent-green); }
 
 /* ==========================================================================
    MISSION CONTROL / THREAT SPAWNERS

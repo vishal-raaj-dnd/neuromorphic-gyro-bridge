@@ -9,7 +9,7 @@
 // ============================================================================
 const state = {
   controllerMode: 'neuromorphic', // 'neuromorphic' or 'baseline'
-  cameraMode: 'tpv',              // 'tpv', 'fpv', 'orbit'
+  cameraMode: 'tpv',              // 'tpv', 'fpv', 'top', 'side', 'orbit'
   flightMode: 'hover',            // 'hover' or 'cruise'
   environmentMode: 'nature',      // 'nature' (Lush Green Meadow) or 'hangar' (Cyber Hangar)
   hudCollapsed: false,
@@ -45,13 +45,19 @@ const state = {
     headlights: []
   },
 
-  // Obstacle Threat State
+  // Obstacle Threat State & Shape Aspect Ratio
   obstacle: {
     active: false,
     pos: new THREE.Vector3(0, 1.5, 26.0),
     vel: new THREE.Vector3(0, 0, -7.78), // 28 km/h = ~7.78 m/s
-    radius: 0.38,
+    geomMode: 'point', // 'point', 'tall', 'wide'
+    radius: 0.28,
+    width: 0.35,
+    height: 0.35,
     mesh: null,
+    pointGroup: null,
+    tallGroup: null,
+    wideGroup: null,
     exhaustMesh: null,
     targetLockBox: null,
     trail: []
@@ -84,9 +90,13 @@ const state = {
   evasion: {
     active: false,
     phase: 'idle', // 'idle' | 'saccade' | 'recovery'
+    evasionType: 'lateral', // 'lateral' (DNa02 roll bank) or 'vertical' (DNb01 pop-up flare)
     direction: 0,  // +1 (dodge right) or -1 (dodge left)
     targetRoll: 0.0,
+    targetAltitude: 1.5,
+    targetPitch: 0.0,
     originX: 0.0,
+    originY: 1.5,
     saccadeStartTime: 0.0,
     recoveryStartTime: 0.0,
     saccadeDuration: 0.38
@@ -1203,59 +1213,193 @@ evasionTrailLine.frustumCulled = false;
 scene.add(evasionTrailLine);
 const obstacleGroup = new THREE.Group();
 
-// Aerodynamic Interceptor Hull
-const obsHullGeo = new THREE.ConeGeometry(state.obstacle.radius, 1.2, 16);
-const obsHullMat = new THREE.MeshStandardMaterial({
-  color: 0x18181b,
-  metalness: 0.85,
-  roughness: 0.25
+// ----------------------------------------------------------------------------
+// THREAT GEOMETRY 1: MATHEMATICAL PRECISION POINT EPICENTER (x₀, y₀, z₀)
+// ----------------------------------------------------------------------------
+const pointGroup = new THREE.Group();
+
+// Concentric orthogonal holographic laser reticle rings
+const ringMat = new THREE.MeshBasicMaterial({ color: 0xff0055, wireframe: false });
+const reticleRingXY = new THREE.Mesh(new THREE.TorusGeometry(0.38, 0.008, 8, 36), ringMat);
+const reticleRingXZ = new THREE.Mesh(new THREE.TorusGeometry(0.38, 0.008, 8, 36), ringMat);
+reticleRingXZ.rotation.x = Math.PI / 2;
+const reticleRingYZ = new THREE.Mesh(new THREE.TorusGeometry(0.38, 0.008, 8, 36), ringMat);
+reticleRingYZ.rotation.y = Math.PI / 2;
+pointGroup.add(reticleRingXY, reticleRingXZ, reticleRingYZ);
+
+// Pulsing center point epicenter sphere
+const centerPointMat = new THREE.MeshBasicMaterial({ color: 0xff2266 });
+const centerPointSphere = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 16), centerPointMat);
+pointGroup.add(centerPointSphere);
+
+// Precision Crosshair Laser Ticks
+const crosshairMat = new THREE.LineBasicMaterial({ color: 0xff0044, linewidth: 2 });
+[-0.55, 0.55].forEach(x => {
+  const geo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(x, 0, 0),
+    new THREE.Vector3(x * 0.45, 0, 0)
+  ]);
+  pointGroup.add(new THREE.Line(geo, crosshairMat));
 });
-const obsHull = new THREE.Mesh(obsHullGeo, obsHullMat);
-obsHull.rotation.x = -Math.PI / 2; // points toward drone
-obsHull.castShadow = true;
-obstacleGroup.add(obsHull);
-
-// Glowing Hazard Ring & Nose Strobe
-const obsNoseMat = new THREE.MeshBasicMaterial({ color: 0xff0055 });
-const obsNose = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 12), obsNoseMat);
-obsNose.position.set(0, 0, -0.6);
-obstacleGroup.add(obsNose);
-
-const obsRing = new THREE.Mesh(
-  new THREE.TorusGeometry(state.obstacle.radius * 0.9, 0.04, 8, 24),
-  new THREE.MeshBasicMaterial({ color: 0xff0055 })
-);
-obsRing.position.set(0, 0, 0);
-obstacleGroup.add(obsRing);
-
-// Rocket Thruster Exhaust Flare
-const exhaustGeo = new THREE.ConeGeometry(0.2, 0.8, 12);
-const exhaustMat = new THREE.MeshBasicMaterial({
-  color: 0xff5500,
-  transparent: true,
-  opacity: 0.85
+[-0.55, 0.55].forEach(y => {
+  const geo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, y, 0),
+    new THREE.Vector3(0, y * 0.45, 0)
+  ]);
+  pointGroup.add(new THREE.Line(geo, crosshairMat));
 });
+
+// Rocket Thruster Exhaust Flare for Point Projectile
+const exhaustGeo = new THREE.ConeGeometry(0.14, 0.75, 12);
+const exhaustMat = new THREE.MeshBasicMaterial({ color: 0xff5500, transparent: true, opacity: 0.85 });
 const exhaustMesh = new THREE.Mesh(exhaustGeo, exhaustMat);
 exhaustMesh.rotation.x = Math.PI / 2;
-exhaustMesh.position.set(0, 0, 0.8);
-obstacleGroup.add(exhaustMesh);
+exhaustMesh.position.set(0, 0, 0.5);
+pointGroup.add(exhaustMesh);
 
-// 3D Augmented Reality (AR) Target Lock Reticle
-const lockGeo = new THREE.BoxGeometry(1.6, 1.6, 1.6);
-const lockMat = new THREE.MeshBasicMaterial({
-  color: 0xff0055,
-  wireframe: true,
-  transparent: true,
-  opacity: 0.6
-});
+// Point Light Glow
+const pointLight = new THREE.PointLight(0xff0044, 2.2, 4.5);
+pointGroup.add(pointLight);
+
+// 3D Augmented Reality (AR) Target Lock Reticle Box
+const lockGeo = new THREE.BoxGeometry(1.2, 1.2, 1.2);
+const lockMat = new THREE.MeshBasicMaterial({ color: 0xff0055, wireframe: true, transparent: true, opacity: 0.65 });
 const targetLockBox = new THREE.Mesh(lockGeo, lockMat);
-obstacleGroup.add(targetLockBox);
+pointGroup.add(targetLockBox);
+
+obstacleGroup.add(pointGroup);
+
+// ----------------------------------------------------------------------------
+// THREAT GEOMETRY 2: TALL PILLAR (H > W) -> Vertical Column Requiring Lateral Bank
+// ----------------------------------------------------------------------------
+const tallGroup = new THREE.Group();
+
+// Tall Column Cylinder (H = 3.8m, W = 0.48m)
+const tallColGeo = new THREE.CylinderGeometry(0.24, 0.24, 3.8, 16);
+const tallColMat = new THREE.MeshStandardMaterial({
+  color: 0x1f2937,
+  roughness: 0.35,
+  metalness: 0.8
+});
+const tallColMesh = new THREE.Mesh(tallColGeo, tallColMat);
+tallColMesh.castShadow = true;
+tallGroup.add(tallColMesh);
+
+// Alternating Hazard Yellow/Black Stripes along Column
+for (let y = -1.6; y <= 1.6; y += 0.4) {
+  const stripe = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.245, 0.245, 0.18, 16),
+    new THREE.MeshBasicMaterial({ color: 0xeab308 })
+  );
+  stripe.position.y = y;
+  tallGroup.add(stripe);
+}
+
+// Top Flashing Red Hazard Strobe
+const tallStrobe = new THREE.Mesh(
+  new THREE.SphereGeometry(0.14, 12, 12),
+  new THREE.MeshBasicMaterial({ color: 0xff0044 })
+);
+tallStrobe.position.y = 1.95;
+tallGroup.add(tallStrobe);
+
+// AR Bounding Cage (H = 3.9m, W = 0.8m)
+const tallCage = new THREE.Mesh(
+  new THREE.BoxGeometry(0.7, 3.9, 0.7),
+  new THREE.MeshBasicMaterial({ color: 0xeab308, wireframe: true, transparent: true, opacity: 0.45 })
+);
+tallGroup.add(tallCage);
+tallGroup.visible = false;
+obstacleGroup.add(tallGroup);
+
+// ----------------------------------------------------------------------------
+// THREAT GEOMETRY 3: WIDE BARRIER (W > H) -> Horizontal Span Requiring Vertical Flare
+// ----------------------------------------------------------------------------
+const wideGroup = new THREE.Group();
+
+// Wide Horizontal Beam (W = 4.8m, H = 0.38m, D = 0.25m)
+const wideBeamGeo = new THREE.BoxGeometry(4.8, 0.38, 0.25);
+const wideBeamMat = new THREE.MeshStandardMaterial({
+  color: 0x1e293b,
+  roughness: 0.4,
+  metalness: 0.75
+});
+const wideBeamMesh = new THREE.Mesh(wideBeamGeo, wideBeamMat);
+wideBeamMesh.castShadow = true;
+wideGroup.add(wideBeamMesh);
+
+// Diagonal Yellow Hazard Markings across Wide Face
+for (let x = -2.1; x <= 2.1; x += 0.5) {
+  const stripe = new THREE.Mesh(
+    new THREE.BoxGeometry(0.22, 0.39, 0.26),
+    new THREE.MeshBasicMaterial({ color: 0xeab308 })
+  );
+  stripe.position.set(x, 0, 0);
+  wideGroup.add(stripe);
+}
+
+// Left and Right Wingtip Hazard Strobes
+[-2.4, 2.4].forEach(x => {
+  const strobe = new THREE.Mesh(
+    new THREE.SphereGeometry(0.12, 12, 12),
+    new THREE.MeshBasicMaterial({ color: 0xff0044 })
+  );
+  strobe.position.set(x, 0, 0);
+  wideGroup.add(strobe);
+});
+
+// AR Bounding Cage (W = 4.9m, H = 0.65m)
+const wideCage = new THREE.Mesh(
+  new THREE.BoxGeometry(4.9, 0.65, 0.6),
+  new THREE.MeshBasicMaterial({ color: 0x00f0ff, wireframe: true, transparent: true, opacity: 0.45 })
+);
+wideGroup.add(wideCage);
+wideGroup.visible = false;
+obstacleGroup.add(wideGroup);
 
 obstacleGroup.visible = false;
 scene.add(obstacleGroup);
+
 state.obstacle.mesh = obstacleGroup;
+state.obstacle.pointGroup = pointGroup;
+state.obstacle.tallGroup = tallGroup;
+state.obstacle.wideGroup = wideGroup;
 state.obstacle.exhaustMesh = exhaustMesh;
 state.obstacle.targetLockBox = targetLockBox;
+
+// Switch Threat Geometry Type
+function setThreatGeometry(mode) {
+  state.obstacle.geomMode = mode;
+  pointGroup.visible = (mode === 'point');
+  tallGroup.visible = (mode === 'tall');
+  wideGroup.visible = (mode === 'wide');
+
+  const desc = document.getElementById('geom-desc');
+  document.querySelectorAll('#threat-geom-point, #threat-geom-tall, #threat-geom-wide').forEach(b => b.classList.remove('active'));
+
+  if (mode === 'point') {
+    state.obstacle.radius = 0.28;
+    state.obstacle.width = 0.35;
+    state.obstacle.height = 0.35;
+    const btn = document.getElementById('threat-geom-point');
+    if (btn) btn.classList.add('active');
+    if (desc) desc.innerText = "Point Epicenter: Laser-locked spatial coordinate (x₀, y₀, z₀). Drosophila connectome evaluates precision collision ray.";
+  } else if (mode === 'tall') {
+    state.obstacle.radius = 0.32;
+    state.obstacle.width = 0.48;
+    state.obstacle.height = 3.8;
+    const btn = document.getElementById('threat-geom-tall');
+    if (btn) btn.classList.add('active');
+    if (desc) desc.innerText = "Tall Pillar (H > W): Aspect ratio H/W = 7.9. Compound eye triggers DNa02/GF lateral bank roll to slip past side.";
+  } else if (mode === 'wide') {
+    state.obstacle.radius = 0.32;
+    state.obstacle.width = 4.8;
+    state.obstacle.height = 0.38;
+    const btn = document.getElementById('threat-geom-wide');
+    if (btn) btn.classList.add('active');
+    if (desc) desc.innerText = "Wide Barrier (W > H): Aspect ratio W/H = 12.6. Lateral evasion impossible; compound eye triggers DNb01 vertical pop-up flare!";
+  }
+}
 
 // ============================================================================
 // IN-BROWSER DROSOPHILA CONNECTOME & NEUROMORPHIC GYRO ENGINE
@@ -1294,10 +1438,15 @@ function updateConnectomeBrain(dt) {
     const relVel = new THREE.Vector3().subVectors(obs.vel, d.vel);
     const closingSpeed = -rel.dot(relVel) / (dist + 1e-4);
 
-    // Biological Looming Feature Detection (LC4 / LC6 / LPLC2)
+    // Biological Compound Eye Looming & Aspect Ratio Analysis
     if (rel.z > 0 && closingSpeed > 0) { // Threat is in front and approaching
-      const theta = 2.0 * Math.atan2(obs.radius, dist);
-      const theta_dot = (2.0 * obs.radius * closingSpeed) / (dist * dist + obs.radius * obs.radius);
+      const theta_w = 2.0 * Math.atan2(obs.width / 2, dist);
+      const theta_h = 2.0 * Math.atan2(obs.height / 2, dist);
+      const opticalAspect = theta_w / (theta_h + 1e-4);
+
+      const charRadius = Math.max(obs.radius, Math.min(obs.width, obs.height) / 2);
+      const theta = Math.max(theta_w, theta_h);
+      const theta_dot = (2.0 * charRadius * closingSpeed) / (dist * dist + charRadius * charRadius);
       const looming = theta * 1.6 + theta_dot * 3.2;
       state.brain.looming_metric = Math.min(looming, 5.0);
 
@@ -1311,46 +1460,75 @@ function updateConnectomeBrain(dt) {
           state.brain.latency_ms = performance.now() - state.brain.trial_start_time;
         }
 
-        // Phase 1: Onset & Direction Latching (Only set on transition into saccade)
+        // Phase 1: Onset & Mathematical Escape Vector Selection
         if (ev.phase === 'idle') {
           ev.active = true;
           ev.phase = 'saccade';
           ev.originX = d.pos.x;
+          ev.originY = d.pos.y;
           ev.saccadeStartTime = performance.now();
 
-          // Determine clear dodge corridor
-          if (rel.x > 0.04) {
-            ev.direction = -1; // Dodge left
-          } else if (rel.x < -0.04) {
-            ev.direction = 1;  // Dodge right
+          // Mathematical Shape Analysis:
+          // If Wide Barrier (W > H, aspect ratio > 2.2):
+          // Lateral evasion requires clearing W/2 = 2.4m which takes > 0.8s.
+          // Minimum energy path is a vertical pop-up flare (DNb01) jumping over the 0.38m barrier!
+          if (obs.geomMode === 'wide' || opticalAspect > 2.2) {
+            ev.evasionType = 'vertical';
+            ev.targetAltitude = 2.85; // Climb 1.35m above obstacle height
+            ev.targetPitch = 0.16;   // +9 deg pitch-up flare
+            ev.targetRoll = 0.0;
+            ev.saccadeDuration = 0.44;
           } else {
-            // Break symmetry cleanly towards open corridor
-            ev.direction = (d.pos.x > 0.2) ? -1 : 1;
-          }
+            // Point Epicenter or Tall Pillar (H >= W):
+            // Lateral roll saccade (DNa02 / GF) is optimal minimum-energy path
+            ev.evasionType = 'lateral';
+            ev.targetAltitude = 1.50;
+            ev.targetPitch = 0.0;
+            ev.saccadeDuration = 0.38;
 
-          // Target bank angle: ~30 deg (0.52 rad)
-          ev.targetRoll = -ev.direction * 0.52;
+            if (rel.x > 0.04) {
+              ev.direction = -1; // Dodge left
+            } else if (rel.x < -0.04) {
+              ev.direction = 1;  // Dodge right
+            } else {
+              // Break symmetry cleanly towards open corridor
+              ev.direction = (d.pos.x > 0.2) ? -1 : 1;
+            }
+            // Target bank angle: ~30 deg (0.52 rad)
+            ev.targetRoll = -ev.direction * 0.52;
+          }
           playSpikeClick();
         }
 
         // Phase 2: Active Saccade Execution
         if (ev.phase === 'saccade') {
-          if (ev.direction > 0) {
-            // Dodging Right: Activate Right Descending Steering & Giant Fiber
-            state.brain.spikes.dna02_r = true;
-            state.brain.spikes.dna01_r = true;
-            state.brain.spikes.gf_r = (looming > 1.2);
-            state.brain.spikes.dna02_l = false;
+          if (ev.evasionType === 'vertical') {
+            // Vertical Pop-Up Flare: Activate Giant Fiber & Descending Lift
+            state.brain.spikes.gf_l = true;
+            state.brain.spikes.gf_r = true;
             state.brain.spikes.dna01_l = false;
-            state.brain.spikes.gf_l = false;
-          } else {
-            // Dodging Left: Activate Left Descending Steering & Giant Fiber
-            state.brain.spikes.dna02_l = true;
-            state.brain.spikes.dna01_l = true;
-            state.brain.spikes.gf_l = (looming > 1.2);
-            state.brain.spikes.dna02_r = false;
             state.brain.spikes.dna01_r = false;
-            state.brain.spikes.gf_r = false;
+            state.brain.spikes.dna02_l = false;
+            state.brain.spikes.dna02_r = false;
+          } else {
+            // Lateral Roll Saccade
+            if (ev.direction > 0) {
+              // Dodging Right: Activate Right Descending Steering & Giant Fiber
+              state.brain.spikes.dna02_r = true;
+              state.brain.spikes.dna01_r = true;
+              state.brain.spikes.gf_r = (looming > 1.2);
+              state.brain.spikes.dna02_l = false;
+              state.brain.spikes.dna01_l = false;
+              state.brain.spikes.gf_l = false;
+            } else {
+              // Dodging Left: Activate Left Descending Steering & Giant Fiber
+              state.brain.spikes.dna02_l = true;
+              state.brain.spikes.dna01_l = true;
+              state.brain.spikes.gf_l = (looming > 1.2);
+              state.brain.spikes.dna02_r = false;
+              state.brain.spikes.dna01_r = false;
+              state.brain.spikes.gf_r = false;
+            }
           }
 
           // Check if threat has passed the drone's collision plane
@@ -1393,16 +1571,24 @@ function updateConnectomeBrain(dt) {
     // Active counter-banking to arrest lateral velocity and guide drone back to corridor center (X = 0)
     const lateralVx = d.vel.x;
     const xDistFromCenter = d.pos.x - 0.0;
-
     const counterBank = THREE.MathUtils.clamp(0.26 * lateralVx + 0.14 * xDistFromCenter, -0.42, 0.42);
     ev.targetRoll = counterBank;
 
+    // Smooth altitude recovery back to nominal hover 1.50m
+    const altErr = 1.50 - d.pos.y;
+    ev.targetAltitude = 1.50;
+    ev.targetPitch = 0.0;
+
     // Transition to idle when velocity is damped and attitude leveled
     const elapsedRec = (performance.now() - ev.recoveryStartTime) / 1000;
-    if ((Math.abs(lateralVx) < 0.06 && Math.abs(xDistFromCenter) < 0.12) || elapsedRec > 1.6) {
+    const lateralSettled = (Math.abs(lateralVx) < 0.06 && Math.abs(xDistFromCenter) < 0.12);
+    const verticalSettled = (Math.abs(d.vel.y) < 0.08 && Math.abs(altErr) < 0.12);
+
+    if ((lateralSettled && verticalSettled) || elapsedRec > 1.8) {
       ev.phase = 'idle';
       ev.active = false;
       ev.targetRoll = 0.0;
+      ev.targetAltitude = 1.50;
     }
   }
 
@@ -1453,7 +1639,9 @@ function updatePhysics(dt) {
 
     // 2. Pitch Rate Control:
     let pitch_target = 0.0;
-    if (state.flightMode === 'cruise') {
+    if (ev.phase === 'saccade' && ev.evasionType === 'vertical') {
+      pitch_target = ev.targetPitch; // +0.16 rad (+9 deg) pitch flare for vertical escape
+    } else if (state.flightMode === 'cruise') {
       pitch_target = 0.06;
     } else if (state.flightMode === 'hover' && ev.phase === 'idle') {
       // Optomotor longitudinal damping in hover
@@ -1466,21 +1654,26 @@ function updatePhysics(dt) {
     yaw_rate_sp = THREE.MathUtils.clamp(-3.5 * d.euler.y + k_manual_yaw, -3.5, 3.5);
 
     // 4. Aerodynamic Coupled Thrust Vectoring with Closed-Loop Altitude Hold:
-    const z_target = 1.5;
+    const z_target = (ev.phase === 'saccade' || ev.phase === 'recovery') ? ev.targetAltitude : 1.50;
     const z_err = z_target - d.pos.y;
-    const kp_z = 7.5;
-    const kd_z = 3.5;
+    const kp_z = 8.5;
+    const kd_z = 4.0;
     // Commanded vertical acceleration
     const accel_z_des = 9.81 + (kp_z * z_err) - (kd_z * d.vel.y) + k_manual_thrust;
-    const accel_z_clamped = THREE.MathUtils.clamp(accel_z_des, 3.5, 15.0);
+    const accel_z_clamped = THREE.MathUtils.clamp(accel_z_des, 3.5, 16.0);
     const base_thrust = d.mass * accel_z_clamped; // ~4.41 N at hover
 
-    // Biological thrust boost during saccade bank: +1.6 N (clean lateral vectoring)
-    const saccade_boost = (ev.phase === 'saccade') ? 1.6 : 0.0;
+    // Biological thrust boost:
+    // If vertical pop-up flare: +3.2 N vertical jump thrust (DNb01)
+    // If lateral bank saccade: +1.6 N tilt vectoring boost
+    let saccade_boost = 0.0;
+    if (ev.phase === 'saccade') {
+      saccade_boost = (ev.evasionType === 'vertical') ? 3.2 : 1.6;
+    }
 
     // Aerodynamic tilt compensation (capped at 1.4x to prevent vertical runaway)
     const cos_tilt = Math.max(0.72, Math.cos(d.euler.z) * Math.cos(d.euler.x));
-    thrust_sp = THREE.MathUtils.clamp((base_thrust + saccade_boost) / cos_tilt, 2.5, 8.5);
+    thrust_sp = THREE.MathUtils.clamp((base_thrust + saccade_boost) / cos_tilt, 2.5, 9.8);
 
   } else {
     // =========================================================================
@@ -1607,12 +1800,32 @@ function updatePhysics(dt) {
       obs.targetLockBox.rotation.z += dt * 3.0;
     }
 
-    // Collision Check
-    const dist = d.pos.distanceTo(obs.pos);
-    const colThresh = obs.radius + 0.25;
+    // Precise Multi-Geometry Collision Check
+    let isCollision = false;
+    let clearanceDist = 999.0;
+    const dx = Math.abs(d.pos.x - obs.pos.x);
+    const dy = Math.abs(d.pos.y - obs.pos.y);
+    const dz = Math.abs(d.pos.z - obs.pos.z);
 
-    if (dist <= colThresh) {
-      triggerTrialEnd(false, dist);
+    if (obs.geomMode === 'point') {
+      clearanceDist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      isCollision = (clearanceDist <= 0.28);
+    } else if (obs.geomMode === 'tall') {
+      clearanceDist = Math.sqrt(dx * dx + dz * dz);
+      isCollision = (dx <= 0.38 && dy <= 1.95 && dz <= 0.38);
+    } else if (obs.geomMode === 'wide') {
+      clearanceDist = Math.sqrt(dy * dy + dz * dz);
+      isCollision = (dx <= 2.45 && dy <= 0.32 && dz <= 0.38);
+    }
+
+    if (clearanceDist < state.brain.min_clearance) {
+      state.brain.min_clearance = clearanceDist;
+      const diagClr = document.getElementById('diag-clearance');
+      if (diagClr) diagClr.innerText = clearanceDist.toFixed(2) + " m";
+    }
+
+    if (isCollision) {
+      triggerTrialEnd(false, clearanceDist);
     } else if (obs.pos.z < d.pos.z - 3.5) {
       triggerTrialEnd(true, state.brain.min_clearance);
     }
@@ -1656,21 +1869,35 @@ function updateCameras() {
 
   if (state.cameraMode === 'tpv') {
     controls.enabled = false;
-    // Third Person Chase View: Positioned higher and back for crystal clear visibility of the entire arena
+    // 1. Third Person Chase View: Positioned high and back for clear 3D perspective
     const offset = new THREE.Vector3(0, 0.85, -2.4).applyEuler(d.euler);
     camera.position.copy(d.pos).add(offset);
     camera.lookAt(d.pos.x, d.pos.y + 0.25, d.pos.z + 5.0);
 
   } else if (state.cameraMode === 'fpv') {
     controls.enabled = false;
-    // First Person View: Nose cockpit camera looking forward
+    // 2. Front Nose Cockpit View: FPV camera looking directly forward
     const nosePos = new THREE.Vector3(0, 0.08, 0.24).applyEuler(d.euler);
     camera.position.copy(d.pos).add(nosePos);
     const lookTarget = new THREE.Vector3(0, 0, 12.0).applyEuler(d.euler).add(camera.position);
     camera.lookAt(lookTarget);
 
+  } else if (state.cameraMode === 'top') {
+    controls.enabled = false;
+    // 3. Top-Down Bird's-Eye View: Looking straight down at the flight corridor
+    // Perfectly visualizes lateral jink and corridor lane centering (X = 0)
+    camera.position.set(0, 14.0, d.pos.z + 5.0);
+    camera.lookAt(0, 0, d.pos.z + 5.0);
+
+  } else if (state.cameraMode === 'side') {
+    controls.enabled = false;
+    // 4. Side Profile Elevation View: Looking at the drone from the port side
+    // Clearly demonstrates pitch flare, vertical pop-up jump, and altitude leveling
+    camera.position.set(-7.5, d.pos.y + 0.4, d.pos.z + 3.0);
+    camera.lookAt(0, d.pos.y + 0.2, d.pos.z + 4.5);
+
   } else {
-    // Orbit Free-Cam
+    // 5. Orbit Free-Cam: Full 360-degree user-controlled orbital camera
     controls.enabled = true;
     controls.target.copy(d.pos);
   }
@@ -1740,6 +1967,151 @@ function drawCompoundEye() {
     const act = b.trace_dna02_r * 0.45 + (b.spikes.gf_r ? 0.9 : 0.08);
     eyeCtx.fillStyle = `rgba(0, 255, 136, ${Math.min(1.0, act)})`;
     eyeCtx.fillRect(eyeCanvas.width / 2 + i * cellWidth, 20, cellWidth - 1, 80);
+  }
+}
+
+// ============================================================================
+// REAL-TIME DYNAMIC S-CURVE TRAJECTORY & EQUILIBRIUM GRAPH RENDERER
+// ============================================================================
+const trajCanvas = document.getElementById('trajectory-curve-canvas');
+const trajCtx = trajCanvas ? trajCanvas.getContext('2d') : null;
+
+function drawTrajectoryGraph() {
+  if (!trajCanvas || !trajCtx) return;
+  const d = state.drone;
+  const obs = state.obstacle;
+  const ev = state.evasion;
+  const w = trajCanvas.width;
+  const h = trajCanvas.height;
+
+  // Background
+  trajCtx.fillStyle = '#060a14';
+  trajCtx.fillRect(0, 0, w, h);
+
+  // Coordinate scales:
+  // X: Lateral position from -2.4m (left = 0) to +2.4m (right = w)
+  const scaleX = (x) => ((x + 2.4) / 4.8) * w;
+  const centerX = scaleX(0);
+
+  // Grid lines: safety boundary corridors at ±1.5m and ±0.75m
+  trajCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+  trajCtx.lineWidth = 1;
+  [-1.5, -0.75, 0.75, 1.5].forEach(x => {
+    const px = scaleX(x);
+    trajCtx.beginPath();
+    trajCtx.moveTo(px, 0);
+    trajCtx.lineTo(px, h);
+    trajCtx.stroke();
+  });
+
+  // Center track reference (Green dashed centerline at X = 0.00m)
+  trajCtx.strokeStyle = 'rgba(0, 255, 136, 0.35)';
+  trajCtx.setLineDash([4, 4]);
+  trajCtx.beginPath();
+  trajCtx.moveTo(centerX, 0);
+  trajCtx.lineTo(centerX, h);
+  trajCtx.stroke();
+  trajCtx.setLineDash([]);
+
+  // Plot recorded S-curve flight path
+  const pts = state.trail.points;
+  if (pts && pts.length > 1) {
+    trajCtx.lineWidth = 2.5;
+    trajCtx.beginPath();
+    for (let i = 0; i < pts.length; i++) {
+      const py = h - 8 - (i / (pts.length - 1)) * (h - 16);
+      const px = scaleX(pts[i].pos.x);
+      if (i === 0) trajCtx.moveTo(px, py);
+      else trajCtx.lineTo(px, py);
+    }
+    // Gradient stroke along trajectory
+    const grad = trajCtx.createLinearGradient(0, h, 0, 0);
+    grad.addColorStop(0, '#0088ff');
+    grad.addColorStop(0.5, '#00f0ff');
+    grad.addColorStop(1, '#00ff88');
+    trajCtx.strokeStyle = grad;
+    trajCtx.stroke();
+  }
+
+  // Draw Threat Epicenter Marker (Red)
+  if (obs.active) {
+    const obsPx = scaleX(obs.pos.x);
+    // Relative forward distance along corridor
+    const relZ = obs.pos.z - d.pos.z;
+    const normZ = THREE.MathUtils.clamp(relZ / 26.0, 0.05, 0.95);
+    const obsPy = 8 + (1 - normZ) * (h - 20);
+
+    if (obs.geomMode === 'wide') {
+      // Wide barrier: draw horizontal hazard span
+      const spanPx = (obs.width / 4.8) * w;
+      trajCtx.strokeStyle = 'rgba(239, 68, 68, 0.9)';
+      trajCtx.lineWidth = 3;
+      trajCtx.beginPath();
+      trajCtx.moveTo(obsPx - spanPx / 2, obsPy);
+      trajCtx.lineTo(obsPx + spanPx / 2, obsPy);
+      trajCtx.stroke();
+    } else {
+      // Precision point epicenter: draw reticle crosshair and radar pulse
+      trajCtx.fillStyle = '#ef4444';
+      trajCtx.beginPath();
+      trajCtx.arc(obsPx, obsPy, 4.5, 0, Math.PI * 2);
+      trajCtx.fill();
+
+      // Pulsing radar ring
+      const pulseR = 5 + Math.sin(performance.now() * 0.012) * 3;
+      trajCtx.strokeStyle = 'rgba(239, 68, 68, 0.65)';
+      trajCtx.lineWidth = 1.5;
+      trajCtx.beginPath();
+      trajCtx.arc(obsPx, obsPy, pulseR, 0, Math.PI * 2);
+      trajCtx.stroke();
+
+      // Crosshair ticks
+      trajCtx.strokeStyle = 'rgba(255, 68, 68, 0.7)';
+      trajCtx.lineWidth = 1;
+      trajCtx.beginPath();
+      trajCtx.moveTo(obsPx - 8, obsPy);
+      trajCtx.lineTo(obsPx + 8, obsPy);
+      trajCtx.moveTo(obsPx, obsPy - 8);
+      trajCtx.lineTo(obsPx, obsPy + 8);
+      trajCtx.stroke();
+    }
+  }
+
+  // Draw Live Drone Position Marker (Cyan Glowing Marker)
+  const dronePx = scaleX(d.pos.x);
+  const dronePy = h - 14;
+
+  trajCtx.fillStyle = '#00f0ff';
+  trajCtx.beginPath();
+  trajCtx.arc(dronePx, dronePy, 4.5, 0, Math.PI * 2);
+  trajCtx.fill();
+
+  // Bank angle vector arrow
+  const bankLen = 9;
+  const bankDx = Math.cos(d.euler.z) * bankLen;
+  const bankDy = Math.sin(d.euler.z) * bankLen;
+  trajCtx.strokeStyle = '#00f0ff';
+  trajCtx.lineWidth = 2;
+  trajCtx.beginPath();
+  trajCtx.moveTo(dronePx - bankDx, dronePy + bankDy);
+  trajCtx.lineTo(dronePx + bankDx, dronePy - bankDy);
+  trajCtx.stroke();
+
+  // Dynamic Phase Badge update
+  const badge = document.getElementById('graph-phase-badge');
+  if (badge) {
+    const xDist = d.pos.x;
+    const sign = xDist > 0 ? '+' : '';
+    if (ev.phase === 'saccade') {
+      badge.innerText = `SACCADE ${sign}${xDist.toFixed(2)}m`;
+      badge.style.color = '#00f0ff';
+    } else if (ev.phase === 'recovery') {
+      badge.innerText = `RECOVERING ${sign}${xDist.toFixed(2)}m`;
+      badge.style.color = '#eab308';
+    } else {
+      badge.innerText = `BALANCED ${sign}${xDist.toFixed(2)}m`;
+      badge.style.color = '#00ff88';
+    }
   }
 }
 
@@ -1832,7 +2204,10 @@ function launchThreat(speedKmh, offsetM) {
   state.evasion.phase = 'idle';
   state.evasion.direction = 0;
   state.evasion.targetRoll = 0.0;
+  state.evasion.targetAltitude = 1.50;
+  state.evasion.targetPitch = 0.0;
   state.evasion.originX = d.pos.x;
+  state.evasion.originY = d.pos.y;
 
   // Clear previous trajectory points so new evasion path is crystal clear
   if (state.trail) state.trail.points = [];
@@ -1858,7 +2233,10 @@ function resetArena() {
   state.evasion.phase = 'idle';
   state.evasion.direction = 0;
   state.evasion.targetRoll = 0.0;
+  state.evasion.targetAltitude = 1.50;
+  state.evasion.targetPitch = 0.0;
   state.evasion.originX = 0.0;
+  state.evasion.originY = 1.50;
 
   if (state.trail) state.trail.points = [];
 
@@ -1868,15 +2246,18 @@ function resetArena() {
   document.getElementById('diag-clearance').innerText = "-- m";
 }
 
-// Camera Mode Switchers
+// Camera Mode Switchers (5 Perspectives)
 document.getElementById('cam-tpv-btn').onclick = () => switchCamera('tpv');
 document.getElementById('cam-fpv-btn').onclick = () => switchCamera('fpv');
+document.getElementById('cam-top-btn').onclick = () => switchCamera('top');
+document.getElementById('cam-side-btn').onclick = () => switchCamera('side');
 document.getElementById('cam-orbit-btn').onclick = () => switchCamera('orbit');
 
 function switchCamera(mode) {
   state.cameraMode = mode;
   document.querySelectorAll('.cam-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(`cam-${mode}-btn`).classList.add('active');
+  const btn = document.getElementById(`cam-${mode}-btn`);
+  if (btn) btn.classList.add('active');
 
   const fpvHud = document.getElementById('fpv-hud');
   if (mode === 'fpv') {
@@ -1885,6 +2266,14 @@ function switchCamera(mode) {
     fpvHud.classList.add('hidden');
   }
 }
+
+// Threat Geometry Mode Switchers
+const pointGeomBtn = document.getElementById('threat-geom-point');
+if (pointGeomBtn) pointGeomBtn.onclick = () => setThreatGeometry('point');
+const tallGeomBtn = document.getElementById('threat-geom-tall');
+if (tallGeomBtn) tallGeomBtn.onclick = () => setThreatGeometry('tall');
+const wideGeomBtn = document.getElementById('threat-geom-wide');
+if (wideGeomBtn) wideGeomBtn.onclick = () => setThreatGeometry('wide');
 
 // Environment Switcher (Lush Green Nature vs Cyber Hangar)
 const envToggleBtn = document.getElementById('env-toggle-btn');
@@ -1968,12 +2357,14 @@ document.getElementById('audio-toggle-btn').onclick = () => {
   document.getElementById('audio-icon').innerText = state.audioEnabled ? "🔊 Audio ON" : "🔇 Audio OFF";
 };
 
-// Keyboard Shortcuts & Manual Flight Control
+// Keyboard Shortcuts & Manual Flight Control (5 Camera Hotkeys)
 window.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
   if (e.key === '1') switchCamera('tpv');
   if (e.key === '2') switchCamera('fpv');
-  if (e.key === '3') switchCamera('orbit');
+  if (e.key === '3') switchCamera('top');
+  if (e.key === '4') switchCamera('side');
+  if (e.key === '5') switchCamera('orbit');
   if (e.code === 'Space') launchThreat(state.threatSpeedKmh, state.threatOffsetM);
   if (k === 'r') resetArena();
   if (k === 't') {
@@ -2061,11 +2452,15 @@ function animate() {
   // Render 3D Scene
   renderer.render(scene, camera);
 
-  // Render HUD & Oscilloscope
+  // Render HUD, Oscilloscope, & Real-Time S-Curve Trajectory Graph
   updateUI();
   drawSpikeRaster();
+  drawTrajectoryGraph();
   if (state.cameraMode === 'fpv') drawCompoundEye();
 }
+
+// Initialize default threat geometry
+setThreatGeometry('point');
 
 // Start Simulator
 animate();

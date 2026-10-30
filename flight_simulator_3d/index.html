@@ -27,6 +27,16 @@
       </div>
     </div>
 
+    <!-- Mode Switcher: 3D Arena Simulator vs FPV Video Vision Lab -->
+    <div class="app-mode-switch" role="tablist">
+      <button id="tab-arena-btn" class="app-tab-btn active" role="tab" title="Interactive 3D Flight Simulation Arena">
+        <span>🎮 3D Flight Arena</span>
+      </button>
+      <button id="tab-vision-btn" class="app-tab-btn" role="tab" title="Upload FPV Drone Video, Track On-the-Spot Latency & Directional Avoidance">
+        <span>📹 FPV Video Vision Lab</span>
+      </button>
+    </div>
+
     <!-- View Mode Switcher: 5 Perspectives -->
     <div class="camera-toolbar" role="toolbar" aria-label="Camera Views">
       <button id="cam-tpv-btn" class="cam-btn active" title="Third Person Chase View (Key: 1)">
@@ -276,6 +286,185 @@
     </div>
   </aside>
 
+  <!-- =========================================================================
+       FPV VIDEO VISION PROCESSOR & LATENCY TRACKER LAB
+       ========================================================================= -->
+  <main id="vision-lab-view" class="vision-lab-overlay hidden">
+    <!-- Vision Lab Header -->
+    <div class="vlab-header">
+      <div class="vlab-title-group">
+        <div class="pulse-indicator"></div>
+        <div>
+          <h2 class="vlab-title">FPV VIDEO VISION PROCESSOR &amp; TRAJECTORY RECONSTRUCTION</h2>
+          <span class="vlab-subtitle">Drosophila Receptive Field Looming • On-The-Spot Latency Tracker • Directional Steering Bar Graph</span>
+        </div>
+      </div>
+      <div class="vlab-actions">
+        <input type="file" id="video-file-input" accept="video/mp4,video/webm,video/quicktime" class="hidden">
+        <button id="upload-video-btn" class="action-btn primary-glow">
+          <span>📁 Upload FPV Video</span>
+        </button>
+        <button id="load-sample-video-btn" class="action-btn secondary-btn" title="Load High-Speed Drone Looming Obstacle Test Video">
+          <span>🎬 Load Demo FPV Flight</span>
+        </button>
+        <button id="close-vision-lab-btn" class="action-btn secondary-btn">
+          <span>✕ Back to 3D Arena</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Vision Lab Content Grid -->
+    <div class="vlab-grid">
+      <!-- Left Column: Video Player & Neural Optical Flow Overlay -->
+      <section class="vlab-panel vlab-video-panel">
+        <div class="vlab-card-header">
+          <div class="card-title">
+            <span class="dot-indicator live"></span>
+            <span>ONBOARD FPV VIDEO FEED &amp; RETINAL OVERLAY</span>
+          </div>
+          <div class="vlab-overlay-toggles">
+            <label class="toggle-pill"><input type="checkbox" id="toggle-ommatidia" checked> <span>Facet Grid</span></label>
+            <label class="toggle-pill"><input type="checkbox" id="toggle-flow-vectors" checked> <span>Flow Vectors</span></label>
+            <label class="toggle-pill"><input type="checkbox" id="toggle-looming-box" checked> <span>Threat Box</span></label>
+          </div>
+        </div>
+
+        <div class="video-container" id="video-dropzone">
+          <video id="fpv-video-player" playsinline muted loop></video>
+          <canvas id="vision-overlay-canvas"></canvas>
+          <div id="video-placeholder" class="video-drop-hint">
+            <div class="drop-icon">📹</div>
+            <p class="drop-title">Drop FPV Drone Video Here (.mp4, .webm)</p>
+            <p class="drop-sub">or click "Upload FPV Video" / "Load Demo FPV Flight"</p>
+          </div>
+        </div>
+
+        <!-- Video Playback Transport Controls -->
+        <div class="vlab-playback-bar">
+          <button id="play-pause-btn" class="action-btn primary-glow" title="Play/Pause">▶️ Play</button>
+          <button id="step-back-btn" class="icon-btn" title="Step Back 1 Frame">⏮️</button>
+          <button id="step-fwd-btn" class="icon-btn" title="Step Forward 1 Frame">⏭️</button>
+          <div class="timeline-container">
+            <input type="range" id="video-scrubber" min="0" max="100" step="0.1" value="0">
+            <span id="time-display" class="time-readout">00:00.00 / 00:00.00</span>
+          </div>
+          <div class="speed-selector">
+            <button class="spd-btn active" data-speed="1.0">1.0x</button>
+            <button class="spd-btn" data-speed="0.5">0.5x</button>
+            <button class="spd-btn" data-speed="0.25">0.25x</button>
+          </div>
+        </div>
+
+        <!-- On-The-Spot Latency & Telemetry Tracker -->
+        <div class="latency-tracker-card">
+          <div class="tracker-header">
+            <span class="badge latency">ON-THE-SPOT LATENCY &amp; SPEED TRACKER</span>
+            <span id="tracker-sync-status" class="sync-status">● REAL-TIME INGESTION</span>
+          </div>
+          <div class="tracker-metrics-grid">
+            <div class="metric-box">
+              <span class="m-label">FRAME PROCESSING TIME</span>
+              <span class="m-value" id="track-frame-time">-- ms</span>
+              <span class="m-sub" id="track-fps-sub">Throughput: -- FPS</span>
+            </div>
+            <div class="metric-box highlight">
+              <span class="m-label">REACTION ON-SPOT LATENCY</span>
+              <span class="m-value" id="track-reaction-time">-- ms</span>
+              <span class="m-sub" id="track-reaction-sub">Waiting for Threat Onset</span>
+            </div>
+            <div class="metric-box">
+              <span class="m-label">TIME-TO-COLLISION (TTC)</span>
+              <span class="m-value" id="track-ttc">-- s</span>
+              <span class="m-sub">Optical Divergence &tau;</span>
+            </div>
+            <div class="metric-box">
+              <span class="m-label">LOOMING INTENSITY</span>
+              <span class="m-value" id="track-looming-val">0.00</span>
+              <span class="m-sub">Trigger Threshold: 0.22</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Directional Steering Bar Graph & Trajectory Curve -->
+      <section class="vlab-panel vlab-telemetry-panel">
+        <!-- Model Directional Output Bar Graph -->
+        <div class="vlab-card">
+          <div class="vlab-card-header">
+            <span class="badge model">MODEL DIRECTIONAL STEERING OUTPUT</span>
+            <span id="direction-decision-pill" class="decision-pill status-neutral">PATH CLEAR • CRUISE</span>
+          </div>
+
+          <!-- Compass Needle & Bank Angle Dial -->
+          <div class="directional-dial-container">
+            <div class="dial-visual">
+              <div class="dial-compass" id="dial-needle"></div>
+              <div class="dial-center-dot"></div>
+              <span class="dial-cardinal n">0°</span>
+              <span class="dial-cardinal w">-45°</span>
+              <span class="dial-cardinal e">+45°</span>
+            </div>
+            <div class="dial-readouts">
+              <div class="dial-metric">
+                <span class="label">COMMANDED ROLL BANK:</span>
+                <span class="val" id="bar-roll-val">0.0°</span>
+              </div>
+              <div class="dial-metric">
+                <span class="label">STEERING YAW RATE:</span>
+                <span class="val" id="bar-yaw-val">0.0 °/s</span>
+              </div>
+              <div class="dial-metric">
+                <span class="label">VECTORED THRUST:</span>
+                <span class="val" id="bar-thrust-val">4.41 N</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Directional Multi-Bar Graph -->
+          <div class="direction-bars-wrapper">
+            <div class="dir-bar-row">
+              <span class="dir-label">⬅️ DODGE LEFT (DNa02-L)</span>
+              <div class="dir-track"><div id="bar-left-fill" class="dir-fill left" style="width: 0%;"></div></div>
+              <span class="dir-pct" id="bar-left-pct">0%</span>
+            </div>
+            <div class="dir-bar-row">
+              <span class="dir-label">➡️ DODGE RIGHT (DNa02-R)</span>
+              <div class="dir-track"><div id="bar-right-fill" class="dir-fill right" style="width: 0%;"></div></div>
+              <span class="dir-pct" id="bar-right-pct">0%</span>
+            </div>
+            <div class="dir-bar-row">
+              <span class="dir-label">⬆️ POP-UP JUMP (DNb01)</span>
+              <div class="dir-track"><div id="bar-up-fill" class="dir-fill up" style="width: 0%;"></div></div>
+              <span class="dir-pct" id="bar-up-pct">0%</span>
+            </div>
+            <div class="dir-bar-row">
+              <span class="dir-label">⚡ GIANT FIBER SACCADE (GF)</span>
+              <div class="dir-track"><div id="bar-gf-fill" class="dir-fill alert" style="width: 0%;"></div></div>
+              <span class="dir-pct" id="bar-gf-pct">0%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Real-Time Reconstructed Avoidance Trajectory Graph -->
+        <div class="vlab-card trajectory-card">
+          <div class="vlab-card-header">
+            <span>RECONSTRUCTED 3D AVOIDANCE TRAJECTORY &amp; EQUILIBRIUM</span>
+            <span class="badge" id="vlab-traj-status">AWAITING VIDEO</span>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="vlab-trajectory-canvas" width="560" height="230"></canvas>
+          </div>
+          <div class="traj-legend-row">
+            <span><span class="dot green"></span> Centerline (Collision Path)</span>
+            <span><span class="dot red"></span> Detected Threat Centroid</span>
+            <span><span class="dot cyan"></span> Connectome Evasion Trajectory</span>
+            <span><span class="dot yellow"></span> Restabilization Corridor</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
   <!-- Bottom Helper Bar -->
   <footer class="bottom-bar">
     <div class="keys-help">
@@ -287,16 +476,16 @@
       <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Flight</span>
       <span><kbd>SPACE</kbd> Threat Swatter</span>
       <span><kbd>L</kbd> Loop</span>
+      <span><kbd>V</kbd> Vision Lab</span>
       <span><kbd>H</kbd> HUD</span>
       <span><kbd>R</kbd> Reset</span>
-      <span><kbd>M</kbd> Controller</span>
-      <span><kbd>E</kbd> Environment</span>
     </div>
     <div class="paper-badge">
       <span>IEEE RA-L / Science Robotics Benchmark Ready</span>
     </div>
   </footer>
 
+  <script src="vision_processor.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

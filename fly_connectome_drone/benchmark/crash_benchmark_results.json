@@ -1,0 +1,882 @@
+{
+  "timestamp": "2026-10-30 22:48:08",
+  "suites": {
+    "velocity_stress": {
+      "proposed_neuromorphic": [
+        {
+          "speed_mps": 4.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 4.129,
+          "jitter_rad_s2": 8.69,
+          "max_roll_deg": 111.4,
+          "latency_ms": 2.0
+        },
+        {
+          "speed_mps": 7.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 4.371,
+          "jitter_rad_s2": 8.69,
+          "max_roll_deg": 111.4,
+          "latency_ms": 2.0
+        },
+        {
+          "speed_mps": 10.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 4.27,
+          "jitter_rad_s2": 8.69,
+          "max_roll_deg": 111.4,
+          "latency_ms": 2.0
+        },
+        {
+          "speed_mps": 13.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 3.973,
+          "jitter_rad_s2": 8.69,
+          "max_roll_deg": 111.4,
+          "latency_ms": 2.0
+        },
+        {
+          "speed_mps": 16.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 3.595,
+          "jitter_rad_s2": 8.69,
+          "max_roll_deg": 111.4,
+          "latency_ms": 2.0
+        },
+        {
+          "speed_mps": 19.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 3.2,
+          "jitter_rad_s2": 8.69,
+          "max_roll_deg": 111.4,
+          "latency_ms": 2.0
+        },
+        {
+          "speed_mps": 22.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 2.821,
+          "jitter_rad_s2": 8.69,
+          "max_roll_deg": 111.4,
+          "latency_ms": 2.0
+        },
+        {
+          "speed_mps": 25.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 2.474,
+          "jitter_rad_s2": 8.69,
+          "max_roll_deg": 111.4,
+          "latency_ms": 2.0
+        },
+        {
+          "speed_mps": 28.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 2.165,
+          "jitter_rad_s2": 8.69,
+          "max_roll_deg": 111.4,
+          "latency_ms": 2.0
+        }
+      ],
+      "baseline_flawed": [
+        {
+          "speed_mps": 4.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 1.661,
+          "jitter_rad_s2": 9.17,
+          "max_roll_deg": 344.6,
+          "latency_ms": 2.0
+        },
+        {
+          "speed_mps": 7.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 0.504,
+          "jitter_rad_s2": 9.17,
+          "max_roll_deg": 344.6,
+          "latency_ms": 2.0
+        },
+        {
+          "speed_mps": 10.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 0.14,
+          "jitter_rad_s2": 9.17,
+          "max_roll_deg": 344.6,
+          "latency_ms": 2.0
+        },
+        {
+          "speed_mps": 13.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 0.299,
+          "jitter_rad_s2": 9.17,
+          "max_roll_deg": 344.6,
+          "latency_ms": 2.0
+        },
+        {
+          "speed_mps": 16.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.354,
+          "jitter_rad_s2": 9.17,
+          "max_roll_deg": 344.6,
+          "latency_ms": 2.0
+        },
+        {
+          "speed_mps": 19.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.349,
+          "jitter_rad_s2": 9.17,
+          "max_roll_deg": 344.6,
+          "latency_ms": 2.0
+        },
+        {
+          "speed_mps": 22.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.321,
+          "jitter_rad_s2": 9.17,
+          "max_roll_deg": 344.6,
+          "latency_ms": 2.0
+        },
+        {
+          "speed_mps": 25.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.287,
+          "jitter_rad_s2": 9.17,
+          "max_roll_deg": 344.6,
+          "latency_ms": 2.0
+        },
+        {
+          "speed_mps": 28.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.254,
+          "jitter_rad_s2": 9.17,
+          "max_roll_deg": 344.6,
+          "latency_ms": 2.0
+        }
+      ],
+      "classical_apf": [
+        {
+          "speed_mps": 4.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.131,
+          "jitter_rad_s2": 20.15,
+          "max_roll_deg": 30.0,
+          "latency_ms": 0.0
+        },
+        {
+          "speed_mps": 7.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.069,
+          "jitter_rad_s2": 20.54,
+          "max_roll_deg": 25.2,
+          "latency_ms": 0.0
+        },
+        {
+          "speed_mps": 10.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.061,
+          "jitter_rad_s2": 20.2,
+          "max_roll_deg": 23.1,
+          "latency_ms": 0.0
+        },
+        {
+          "speed_mps": 13.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.059,
+          "jitter_rad_s2": 20.4,
+          "max_roll_deg": 22.5,
+          "latency_ms": 0.0
+        },
+        {
+          "speed_mps": 16.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.056,
+          "jitter_rad_s2": 20.3,
+          "max_roll_deg": 21.2,
+          "latency_ms": 0.0
+        },
+        {
+          "speed_mps": 19.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.054,
+          "jitter_rad_s2": 20.56,
+          "max_roll_deg": 19.8,
+          "latency_ms": 0.0
+        },
+        {
+          "speed_mps": 22.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.053,
+          "jitter_rad_s2": 20.31,
+          "max_roll_deg": 18.7,
+          "latency_ms": 0.0
+        },
+        {
+          "speed_mps": 25.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.053,
+          "jitter_rad_s2": 20.38,
+          "max_roll_deg": 17.9,
+          "latency_ms": 0.0
+        },
+        {
+          "speed_mps": 28.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.051,
+          "jitter_rad_s2": 20.45,
+          "max_roll_deg": 17.0,
+          "latency_ms": 0.0
+        }
+      ]
+    },
+    "distance_horizon": {
+      "proposed_neuromorphic": [
+        {
+          "distance_m": 16.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 4.351,
+          "jitter_rad_s2": 8.69,
+          "max_roll_deg": 111.4,
+          "latency_ms": 2.0
+        },
+        {
+          "distance_m": 12.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 4.005,
+          "jitter_rad_s2": 8.69,
+          "max_roll_deg": 111.4,
+          "latency_ms": 2.0
+        },
+        {
+          "distance_m": 9.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 3.198,
+          "jitter_rad_s2": 8.69,
+          "max_roll_deg": 111.4,
+          "latency_ms": 2.0
+        },
+        {
+          "distance_m": 7.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 2.443,
+          "jitter_rad_s2": 8.69,
+          "max_roll_deg": 111.4,
+          "latency_ms": 2.0
+        },
+        {
+          "distance_m": 5.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 1.572,
+          "jitter_rad_s2": 8.69,
+          "max_roll_deg": 111.4,
+          "latency_ms": 2.0
+        },
+        {
+          "distance_m": 4.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 1.119,
+          "jitter_rad_s2": 8.69,
+          "max_roll_deg": 111.4,
+          "latency_ms": 2.0
+        },
+        {
+          "distance_m": 3.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 0.679,
+          "jitter_rad_s2": 8.69,
+          "max_roll_deg": 111.4,
+          "latency_ms": 2.0
+        },
+        {
+          "distance_m": 2.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.292,
+          "jitter_rad_s2": 8.69,
+          "max_roll_deg": 111.4,
+          "latency_ms": 2.0
+        }
+      ],
+      "baseline_flawed": [
+        {
+          "distance_m": 16.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 0.492,
+          "jitter_rad_s2": 9.17,
+          "max_roll_deg": 344.6,
+          "latency_ms": 2.0
+        },
+        {
+          "distance_m": 12.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 0.175,
+          "jitter_rad_s2": 9.17,
+          "max_roll_deg": 344.6,
+          "latency_ms": 2.0
+        },
+        {
+          "distance_m": 9.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.343,
+          "jitter_rad_s2": 9.17,
+          "max_roll_deg": 344.6,
+          "latency_ms": 2.0
+        },
+        {
+          "distance_m": 7.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.325,
+          "jitter_rad_s2": 9.17,
+          "max_roll_deg": 344.6,
+          "latency_ms": 2.0
+        },
+        {
+          "distance_m": 5.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.227,
+          "jitter_rad_s2": 9.17,
+          "max_roll_deg": 344.6,
+          "latency_ms": 2.0
+        },
+        {
+          "distance_m": 4.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.162,
+          "jitter_rad_s2": 9.17,
+          "max_roll_deg": 344.6,
+          "latency_ms": 2.0
+        },
+        {
+          "distance_m": 3.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.098,
+          "jitter_rad_s2": 9.17,
+          "max_roll_deg": 344.6,
+          "latency_ms": 2.0
+        },
+        {
+          "distance_m": 2.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.044,
+          "jitter_rad_s2": 9.17,
+          "max_roll_deg": 344.6,
+          "latency_ms": 2.0
+        }
+      ],
+      "classical_apf": [
+        {
+          "distance_m": 16.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.014,
+          "jitter_rad_s2": 19.79,
+          "max_roll_deg": 14.7,
+          "latency_ms": 0.0
+        },
+        {
+          "distance_m": 12.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.003,
+          "jitter_rad_s2": 12.67,
+          "max_roll_deg": 10.7,
+          "latency_ms": 0.0
+        },
+        {
+          "distance_m": 9.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.004,
+          "jitter_rad_s2": 13.6,
+          "max_roll_deg": 9.7,
+          "latency_ms": 0.0
+        },
+        {
+          "distance_m": 7.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.004,
+          "jitter_rad_s2": 16.21,
+          "max_roll_deg": 12.3,
+          "latency_ms": 0.0
+        },
+        {
+          "distance_m": 5.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.005,
+          "jitter_rad_s2": 15.85,
+          "max_roll_deg": 11.0,
+          "latency_ms": 0.0
+        },
+        {
+          "distance_m": 4.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.008,
+          "jitter_rad_s2": 14.96,
+          "max_roll_deg": 14.1,
+          "latency_ms": 0.0
+        },
+        {
+          "distance_m": 3.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.011,
+          "jitter_rad_s2": 16.79,
+          "max_roll_deg": 16.0,
+          "latency_ms": 0.0
+        },
+        {
+          "distance_m": 2.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.004,
+          "jitter_rad_s2": 11.48,
+          "max_roll_deg": 3.0,
+          "latency_ms": 0.0
+        }
+      ]
+    },
+    "crosswind_stress": {
+      "proposed_neuromorphic": [
+        {
+          "wind_mps": 0.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 4.395,
+          "max_roll_deg": 111.4,
+          "final_pos_z": -8.2
+        },
+        {
+          "wind_mps": 2.5,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 4.277,
+          "max_roll_deg": 111.4,
+          "final_pos_z": -8.2
+        },
+        {
+          "wind_mps": 5.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 4.178,
+          "max_roll_deg": 111.4,
+          "final_pos_z": -8.2
+        },
+        {
+          "wind_mps": 7.5,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 4.098,
+          "max_roll_deg": 111.4,
+          "final_pos_z": -8.2
+        },
+        {
+          "wind_mps": 10.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 4.038,
+          "max_roll_deg": 111.4,
+          "final_pos_z": -8.2
+        },
+        {
+          "wind_mps": 12.5,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 3.999,
+          "max_roll_deg": 111.4,
+          "final_pos_z": -8.2
+        },
+        {
+          "wind_mps": 15.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 3.98,
+          "max_roll_deg": 111.4,
+          "final_pos_z": -8.2
+        }
+      ],
+      "baseline_flawed": [
+        {
+          "wind_mps": 0.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 0.628,
+          "max_roll_deg": 344.6,
+          "final_pos_z": -25.95
+        },
+        {
+          "wind_mps": 2.5,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 0.701,
+          "max_roll_deg": 344.6,
+          "final_pos_z": -25.95
+        },
+        {
+          "wind_mps": 5.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 1.109,
+          "max_roll_deg": 344.6,
+          "final_pos_z": -25.95
+        },
+        {
+          "wind_mps": 7.5,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 1.609,
+          "max_roll_deg": 344.6,
+          "final_pos_z": -25.95
+        },
+        {
+          "wind_mps": 10.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 2.127,
+          "max_roll_deg": 344.6,
+          "final_pos_z": -25.95
+        },
+        {
+          "wind_mps": 12.5,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 2.643,
+          "max_roll_deg": 344.6,
+          "final_pos_z": -25.95
+        },
+        {
+          "wind_mps": 15.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 3.147,
+          "max_roll_deg": 344.6,
+          "final_pos_z": -25.95
+        }
+      ],
+      "classical_apf": [
+        {
+          "wind_mps": 0.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.174,
+          "max_roll_deg": 29.1,
+          "final_pos_z": 1.5
+        },
+        {
+          "wind_mps": 2.5,
+          "dodged": true,
+          "crash_reason": "NONE",
+          "min_clearance_m": 1.438,
+          "max_roll_deg": 26.0,
+          "final_pos_z": 1.5
+        },
+        {
+          "wind_mps": 5.0,
+          "dodged": true,
+          "crash_reason": "NONE",
+          "min_clearance_m": 2.618,
+          "max_roll_deg": 7.7,
+          "final_pos_z": 1.5
+        },
+        {
+          "wind_mps": 7.5,
+          "dodged": true,
+          "crash_reason": "NONE",
+          "min_clearance_m": 3.623,
+          "max_roll_deg": 3.8,
+          "final_pos_z": 1.5
+        },
+        {
+          "wind_mps": 10.0,
+          "dodged": true,
+          "crash_reason": "NONE",
+          "min_clearance_m": 4.459,
+          "max_roll_deg": 2.4,
+          "final_pos_z": 1.5
+        },
+        {
+          "wind_mps": 12.5,
+          "dodged": true,
+          "crash_reason": "NONE",
+          "min_clearance_m": 5.155,
+          "max_roll_deg": 1.9,
+          "final_pos_z": 1.5
+        },
+        {
+          "wind_mps": 15.0,
+          "dodged": true,
+          "crash_reason": "NONE",
+          "min_clearance_m": 5.738,
+          "max_roll_deg": 1.6,
+          "final_pos_z": 1.5
+        }
+      ]
+    },
+    "pincer_trap": {
+      "proposed_neuromorphic": [
+        {
+          "gap_m": 1.6,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 4.103,
+          "max_roll_deg": 111.4
+        },
+        {
+          "gap_m": 1.2,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 4.151,
+          "max_roll_deg": 111.4
+        },
+        {
+          "gap_m": 0.8,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 4.207,
+          "max_roll_deg": 111.4
+        },
+        {
+          "gap_m": 0.6,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 4.239,
+          "max_roll_deg": 111.4
+        }
+      ],
+      "baseline_flawed": [
+        {
+          "gap_m": 1.6,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 1.036,
+          "max_roll_deg": 344.6
+        },
+        {
+          "gap_m": 1.2,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 0.914,
+          "max_roll_deg": 344.6
+        },
+        {
+          "gap_m": 0.8,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 0.823,
+          "max_roll_deg": 344.6
+        },
+        {
+          "gap_m": 0.6,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 0.792,
+          "max_roll_deg": 344.6
+        }
+      ],
+      "classical_apf": [
+        {
+          "gap_m": 1.6,
+          "dodged": true,
+          "crash_reason": "NONE",
+          "min_clearance_m": 0.703,
+          "max_roll_deg": 23.7
+        },
+        {
+          "gap_m": 1.2,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.529,
+          "max_roll_deg": 26.2
+        },
+        {
+          "gap_m": 0.8,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.364,
+          "max_roll_deg": 26.2
+        },
+        {
+          "gap_m": 0.6,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.242,
+          "max_roll_deg": 19.0
+        }
+      ]
+    },
+    "sensory_noise": {
+      "proposed_neuromorphic": [
+        {
+          "noise_sigma": 0.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 4.354,
+          "spikes_per_sec": 107964.3
+        },
+        {
+          "noise_sigma": 0.2,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 4.354,
+          "spikes_per_sec": 106548.7
+        },
+        {
+          "noise_sigma": 0.5,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 4.183,
+          "spikes_per_sec": 105701.3
+        },
+        {
+          "noise_sigma": 0.8,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 4.185,
+          "spikes_per_sec": 105305.0
+        },
+        {
+          "noise_sigma": 1.2,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 4.354,
+          "spikes_per_sec": 105085.3
+        },
+        {
+          "noise_sigma": 1.6,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 4.185,
+          "spikes_per_sec": 104947.0
+        }
+      ],
+      "baseline_flawed": [
+        {
+          "noise_sigma": 0.0,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 0.604,
+          "spikes_per_sec": 107964.3
+        },
+        {
+          "noise_sigma": 0.2,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 0.604,
+          "spikes_per_sec": 106318.7
+        },
+        {
+          "noise_sigma": 0.5,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 0.604,
+          "spikes_per_sec": 105436.0
+        },
+        {
+          "noise_sigma": 0.8,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 0.604,
+          "spikes_per_sec": 105150.7
+        },
+        {
+          "noise_sigma": 1.2,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 0.604,
+          "spikes_per_sec": 104903.7
+        },
+        {
+          "noise_sigma": 1.6,
+          "dodged": false,
+          "crash_reason": "TUMBLE_STALL",
+          "min_clearance_m": 0.604,
+          "spikes_per_sec": 104827.7
+        }
+      ],
+      "classical_apf": [
+        {
+          "noise_sigma": 0.0,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.016,
+          "spikes_per_sec": 0.0
+        },
+        {
+          "noise_sigma": 0.2,
+          "dodged": true,
+          "crash_reason": "NONE",
+          "min_clearance_m": 2.55,
+          "spikes_per_sec": 0.0
+        },
+        {
+          "noise_sigma": 0.5,
+          "dodged": true,
+          "crash_reason": "NONE",
+          "min_clearance_m": 1.834,
+          "spikes_per_sec": 0.0
+        },
+        {
+          "noise_sigma": 0.8,
+          "dodged": true,
+          "crash_reason": "NONE",
+          "min_clearance_m": 1.207,
+          "spikes_per_sec": 0.0
+        },
+        {
+          "noise_sigma": 1.2,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.537,
+          "spikes_per_sec": 0.0
+        },
+        {
+          "noise_sigma": 1.6,
+          "dodged": false,
+          "crash_reason": "OBSTACLE_COLLISION",
+          "min_clearance_m": 0.509,
+          "spikes_per_sec": 0.0
+        }
+      ]
+    }
+  }
+}

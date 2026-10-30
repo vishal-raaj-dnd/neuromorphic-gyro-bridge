@@ -1,0 +1,23 @@
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local Environment & Agent Configs
+.agents/
+flybrain/
+REA_Skill/
+.gemini/
+.idea/
+.vscode/
+
+# OS Specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store

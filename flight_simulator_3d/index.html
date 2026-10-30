@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drosophila Connectome Neuromorphic Drone Flight Simulator</title>
+  <meta name="description" content="Real-time 3D flight simulation of Drosophila connectome visual saccadic evasion on an autonomous quadrotor with FPV and TPV cameras.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+  <!-- Local Three.js & OrbitControls for offline instant load -->
+  <script src="lib/three.min.js"></script>
+  <script src="lib/OrbitControls.js"></script>
+</head>
+<body>
+  <!-- 3D Canvas -->
+  <canvas id="webgl-canvas"></canvas>
+
+  <!-- Top Navigation & Header -->
+  <header class="top-bar">
+    <div class="brand">
+      <div class="pulse-indicator" id="status-pulse"></div>
+      <div class="brand-text">
+        <h1 class="title">CONNECTOME-FLIGHT 3D</h1>
+        <span class="subtitle">Drosophila Visual Saccadic Evasion & Gyro Bridge</span>
+      </div>
+    </div>
+
+    <!-- View Mode Switcher -->
+    <div class="camera-toolbar" role="toolbar" aria-label="Camera Views">
+      <button id="cam-tpv-btn" class="cam-btn active" title="Third Person Chase View (TPV)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        <span>TPV (Chase)</span>
+      </button>
+      <button id="cam-fpv-btn" class="cam-btn" title="First Person Cockpit View (FPV)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>
+        <span>FPV (Cockpit)</span>
+      </button>
+      <button id="cam-orbit-btn" class="cam-btn" title="Free Orbit View">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M3.6 9h16.8M3.6 15h16.8"></path></svg>
+        <span>Orbit Free</span>
+      </button>
+    </div>
+
+    <!-- Sound & Reset Quick Actions -->
+    <div class="header-actions">
+      <button id="env-toggle-btn" class="action-btn secondary-btn" title="Toggle Environment (Key: E): Lush Green Nature vs Cyber Hangar">
+        <span id="env-mode-text">🌲 Lush Nature</span>
+      </button>
+      <button id="flight-mode-btn" class="action-btn secondary-btn" title="Toggle Drone Flight Mode (Hover vs Cruise)">
+        <span id="flight-mode-text">🛸 Hover Mode</span>
+      </button>
+      <button id="toggle-panels-btn" class="action-btn secondary-btn" title="Toggle Side HUD Panels for Full Screen View (Key: H)">
+        <span>👁️ Full View (H)</span>
+      </button>
+      <button id="audio-toggle-btn" class="icon-btn" title="Toggle Bio-Acoustic Audio">
+        <span id="audio-icon">🔇 Audio OFF</span>
+      </button>
+      <button id="reset-sim-btn" class="action-btn secondary-btn" title="Reset Drone and Obstacles">
+        <span>↺ Reset Arena</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- FPV Reticle & Compound Eye HUD (Active in FPV mode) -->
+  <div id="fpv-hud" class="fpv-overlay hidden">
+    <div class="ommatidia-grid-canvas-container">
+      <canvas id="compound-eye-canvas" width="320" height="120"></canvas>
+    </div>
+    <div class="crosshair-center">
+      <div class="horizon-line" id="horizon-bar"></div>
+      <div class="crosshair-reticle"></div>
+    </div>
+    <div class="hud-readout hud-left">
+      <div class="hud-metric"><span class="label">AIRSPEED:</span> <span id="hud-spd" class="val">3.0</span> m/s</div>
+      <div class="hud-metric"><span class="label">ALTITUDE:</span> <span id="hud-alt" class="val">1.50</span> m</div>
+      <div class="hud-metric"><span class="label">THREAT DIST:</span> <span id="hud-dist" class="val">--</span> m</div>
+    </div>
+    <div class="hud-readout hud-right">
+      <div class="hud-metric"><span class="label">ROLL RATE:</span> <span id="hud-roll" class="val">+0.0</span> °/s</div>
+      <div class="hud-metric"><span class="label">PITCH RATE:</span> <span id="hud-pitch" class="val">+0.0</span> °/s</div>
+      <div class="hud-metric"><span class="label">GF REFLEX:</span> <span id="hud-gf" class="val-alert">IDLE</span></div>
+    </div>
+  </div>
+
+  <!-- Left Telemetry & Brain Activity Panel -->
+  <aside class="panel side-panel left-dock">
+    <div class="panel-header">
+      <h2>BIOLOGICAL NEURAL TELEMETRY</h2>
+      <span class="badge" id="model-badge">FlyWire Connectome</span>
+    </div>
+
+    <!-- Active Brain Firing Rates -->
+    <div class="neural-meter-group">
+      <div class="neuron-bar-container">
+        <div class="bar-label">
+          <span>LC4/LC6 Looming Detectors</span>
+          <span id="meter-looming-val" class="num">0.0%</span>
+        </div>
+        <div class="bar-track"><div id="meter-looming-fill" class="bar-fill blue"></div></div>
+      </div>
+      <div class="neuron-bar-container">
+        <div class="bar-label">
+          <span>Giant Fiber (GF Escape Reflex)</span>
+          <span id="meter-gf-val" class="num">0.0%</span>
+        </div>
+        <div class="bar-track"><div id="meter-gf-fill" class="bar-fill red"></div></div>
+      </div>
+      <div class="neuron-bar-container">
+        <div class="bar-label">
+          <span>DNa02 Bilateral Saccade Bank</span>
+          <span id="meter-dna02-val" class="num">0.0%</span>
+        </div>
+        <div class="bar-track"><div id="meter-dna02-fill" class="bar-fill green"></div></div>
+      </div>
+      <div class="neuron-bar-container">
+        <div class="bar-label">
+          <span>Haltere Gyro Auto-Level Stiffness</span>
+          <span id="meter-haltere-val" class="num">4.5 s⁻¹</span>
+        </div>
+        <div class="bar-track"><div id="meter-haltere-fill" class="bar-fill cyan" style="width: 75%;"></div></div>
+      </div>
+    </div>
+
+    <!-- Live Spike Raster Oscilloscope -->
+    <div class="oscilloscope-wrapper">
+      <div class="scope-header">
+        <span>Descending Spike Train Stream</span>
+        <span class="scope-fps" id="scope-hz">400 Hz Loop</span>
+      </div>
+      <canvas id="spike-raster-canvas" width="300" height="90"></canvas>
+    </div>
+
+    <!-- Flight Envelope Diagnostics -->
+    <div class="diagnostics-grid">
+      <div class="diag-card">
+        <div class="diag-label">Roll Attitude</div>
+        <div class="diag-value" id="diag-roll">0.0°</div>
+      </div>
+      <div class="diag-card">
+        <div class="diag-label">Thrust Vector</div>
+        <div class="diag-value" id="diag-thrust">4.41 N</div>
+      </div>
+      <div class="diag-card">
+        <div class="diag-label">Evasion Status</div>
+        <div class="diag-value status-clear" id="diag-status">CLEAR</div>
+      </div>
+      <div class="diag-card">
+        <div class="diag-label">Min Clearance</div>
+        <div class="diag-value" id="diag-clearance">-- m</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Right Interactive Mission Control Deck -->
+  <aside class="panel side-panel right-dock">
+    <div class="panel-header">
+      <h2>MISSION & THREAT CONTROLS</h2>
+      <span class="badge live">INTERACTIVE</span>
+    </div>
+
+    <!-- Controller Selector Mode -->
+    <div class="control-section">
+      <label class="section-title">FLIGHT CONTROLLER ARCHITECTURE</label>
+      <div class="segmented-control" role="radiogroup">
+        <button id="ctrl-neuromorphic-btn" class="seg-btn active" title="Our proposed Drosophila connectome with continuous gyro rate bridge">
+          🧠 Neuromorphic Gyro (Ours)
+        </button>
+        <button id="ctrl-baseline-btn" class="seg-btn" title="Old flawed GitHub method with discrete commands and pitch=thrust*0.5">
+          ⚠️ Flawed Baseline
+        </button>
+      </div>
+      <p class="desc-hint" id="controller-desc">
+        Continuous biological LIF spiking integrated into 3D angular rates with Haltere damping.
+      </p>
+    </div>
+
+    <!-- Obstacle Threat Launcher -->
+    <div class="control-section">
+      <label class="section-title">SPAWN INCOMING THREAT</label>
+      <div class="threat-button-grid">
+        <button id="spawn-headon-btn" class="action-btn primary-glow">
+          🎯 Head-On Swatter (30 km/h)
+        </button>
+        <button id="spawn-fast-btn" class="action-btn danger-glow">
+          ⚡ High-Speed Projectile
+        </button>
+        <button id="spawn-angled-btn" class="action-btn secondary-btn">
+          📐 Angled Left / Right
+        </button>
+        <button id="spawn-double-btn" class="action-btn secondary-btn">
+          ⚔️ Sequential Double-Threat
+        </button>
+      </div>
+    </div>
+
+    <!-- Environment & Speed Sliders -->
+    <div class="control-section">
+      <label class="section-title">ARENA DYNAMICS PARAMETERS</label>
+
+      <div class="slider-group">
+        <div class="slider-label">
+          <span>Threat Closing Speed</span>
+          <span id="slider-spd-val" class="slider-num">25.0 km/h</span>
+        </div>
+        <input type="range" id="threat-speed-slider" min="10" max="45" step="1" value="25">
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label">
+          <span>Threat Offset / Angle</span>
+          <span id="slider-angle-val" class="slider-num">0.0 m</span>
+        </div>
+        <input type="range" id="threat-offset-slider" min="-2.0" max="2.0" step="0.1" value="0.0">
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label">
+          <span>Crosswind Gust Force</span>
+          <span id="slider-wind-val" class="slider-num">0.0 km/h</span>
+        </div>
+        <input type="range" id="crosswind-slider" min="0" max="25" step="1" value="0">
+      </div>
+    </div>
+
+    <!-- Dodge Result Notification Banner -->
+    <div id="result-banner" class="result-banner hidden">
+      <div class="result-icon" id="result-icon">✓</div>
+      <div class="result-text">
+        <div class="result-title" id="result-title">EVASION SUCCESSFUL</div>
+        <div class="result-detail" id="result-detail">Cleared threat with 4.2m margin at 2ms latency.</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Bottom Helper Bar -->
+  <footer class="bottom-bar">
+    <div class="keys-help">
+      <span><kbd>1</kbd> TPV</span>
+      <span><kbd>2</kbd> FPV</span>
+      <span><kbd>3</kbd> Orbit</span>
+      <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Manual Flight</span>
+      <span><kbd>SPACE</kbd> Launch Threat</span>
+      <span><kbd>H</kbd> Toggle HUD</span>
+      <span><kbd>R</kbd> Reset Arena</span>
+      <span><kbd>M</kbd> Controller Switch</span>
+      <span><kbd>E</kbd> Environment</span>
+    </div>
+    <div class="paper-badge">
+      <span>IEEE RA-L / Science Robotics Benchmark Ready</span>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
